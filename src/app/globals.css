@@ -1,8 +1,40 @@
 @import "tailwindcss";
 
 :root {
+  /* Vercel-inspired color palette */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
+  --accent: #0070f3;
+  --accent-light: #3291ff;
+  --accent-dark: #0761d1;
+  --gray-50: #fafafa;
+  --gray-100: #f5f5f5;
+  --gray-200: #eaeaea;
+  --gray-300: #e0e0e0;
+  --gray-400: #bdbdbd;
+  --gray-500: #9e9e9e;
+  --gray-600: #757575;
+  --gray-700: #616161;
+  --gray-800: #424242;
+  --gray-900: #212121;
+
+  /* Spacing */
+  --gap-quarter: 0.25rem;
+  --gap-half: 0.5rem;
+  --gap: 1rem;
+  --gap-double: 2rem;
+  --gap-triple: 3rem;
+
+  /* Radius */
+  --radius: 5px;
+  --radius-medium: 8px;
+  --radius-large: 12px;
+
+  /* Shadows */
+  --shadow-smallest: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-small: 0 5px 10px rgba(0,0,0,0.08);
+  --shadow-medium: 0 8px 30px rgba(0,0,0,0.12);
+  --shadow-large: 0 30px 60px rgba(0,0,0,0.15);
 }
 
 @theme inline {
@@ -14,13 +46,198 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #000000;
+    --foreground: #ffffff;
+    --accent: #0070f3;
+    --accent-light: #3291ff;
+    --accent-dark: #0761d1;
+    --gray-50: #111111;
+    --gray-100: #181818;
+    --gray-200: #222222;
+    --gray-300: #2a2a2a;
+    --gray-400: #444444;
+    --gray-500: #666666;
+    --gray-600: #888888;
+    --gray-700: #999999;
+    --gray-800: #bbbbbb;
+    --gray-900: #eeeeee;
+
+    /* Shadows for dark mode */
+    --shadow-smallest: 0 2px 4px rgba(0,0,0,0.3);
+    --shadow-small: 0 5px 10px rgba(0,0,0,0.4);
+    --shadow-medium: 0 8px 30px rgba(0,0,0,0.5);
+    --shadow-large: 0 30px 60px rgba(0,0,0,0.6);
   }
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: var(--gap);
+}
+
+h1 {
+  font-size: 2.5rem;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+h3 {
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin-bottom: var(--gap);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-light);
+}
+
+/* Vercel-style button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  font-weight: 500;
+  padding: 0 var(--gap);
+  height: 2.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--foreground);
+  color: var(--background);
+  border: 1px solid var(--foreground);
+}
+
+.btn-primary:hover {
+  background: var(--gray-800);
+  color: var(--background);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--gray-300);
+}
+
+.btn-secondary:hover {
+  border-color: var(--foreground);
+}
+
+/* Card styling */
+.card {
+  background: var(--background);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-small);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-medium);
+}
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--gap);
+}
+
+/* Code blocks */
+pre, code {
+  font-family: var(--font-mono);
+  background: var(--gray-100);
+  border-radius: var(--radius);
+}
+
+code {
+  padding: 0.2em 0.4em;
+  font-size: 0.9em;
+}
+
+pre {
+  padding: var(--gap);
+  overflow-x: auto;
+  margin-bottom: var(--gap);
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Prose styling for blog content */
+.prose {
+  max-width: 65ch;
+  margin: 0 auto;
+}
+
+.prose img {
+  border-radius: var(--radius-medium);
+}
+
+.prose a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+/* Animations and transitions */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
 }
