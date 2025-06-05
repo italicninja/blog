@@ -8,20 +8,15 @@ import { formatDate } from "@/utils/date";
 import type { Metadata } from "next";
 import PostContent from "./post-content";
 
-interface BlogPostPageProps {
-  params: {
-    slug: string;
-  };
-}
-
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: BlogPostPageProps
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
-  const post = await getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
   
   if (!post) {
     return {
@@ -37,9 +32,10 @@ export async function generateMetadata(
 }
 
 export default async function BlogPostPage(
-  { params }: BlogPostPageProps
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const post = await getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
   
   if (!post) {
     notFound();
