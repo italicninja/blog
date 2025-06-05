@@ -5,8 +5,8 @@ import Footer from "@/components/Footer";
 import { getRecentPosts } from "@/lib/posts";
 import { formatDate } from "@/utils/date";
 
-export default function Home() {
-  const recentPosts = getRecentPosts(3);
+export default async function Home() {
+  const recentPosts = await getRecentPosts(3);
 
   return (
     <>
@@ -18,7 +18,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-gray-500">
-                Tech & Automation Stuff
+                Italicninja does Tech & Automation Stuff
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 leading-relaxed">
                 My random thoughts on DevOps, automation, and teaching robots to do my job 🤖

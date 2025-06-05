@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tech & Automation Stuff",
+  title: "Italicninja does Tech & Automation Stuff",
   description: "Random thoughts on DevOps, automation, and teaching robots to do my job",
 };
 

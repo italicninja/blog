@@ -6,12 +6,12 @@ import { getAllPosts } from "@/lib/posts";
 import { formatDate } from "@/utils/date";
 
 export const metadata = {
-  title: 'Blog | Tech & Automation Stuff',
+  title: 'Blog | Italicninja does Tech & Automation Stuff',
   description: 'My random thoughts on DevOps, automation, and teaching robots to do my job.',
 };
 
-export default function BlogPage() {
-  const posts = getAllPosts();
+export default async function BlogPage() {
+  const posts = await getAllPosts();
 
   return (
     <>
@@ -55,8 +55,8 @@ export default function BlogPage() {
                     </p>
                     <div className="flex flex-wrap gap-2 mb-4">
                       {post.tags.map((tag) => (
-                        <span 
-                          key={tag} 
+                        <span
+                          key={tag}
                           className="inline-block bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded-full"
                         >
                           {tag}

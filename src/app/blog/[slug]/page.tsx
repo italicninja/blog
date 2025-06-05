@@ -18,30 +18,34 @@ export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
-export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const post = getPostBySlug(params.slug);
+export async function generateMetadata(
+  { params }: BlogPostPageProps
+): Promise<Metadata> {
+  const post = await getPostBySlug(params.slug);
   
   if (!post) {
     return {
-      title: 'Post Not Found | Tech & Automation Stuff',
+      title: 'Post Not Found | Italicninja does Tech & Automation Stuff',
       description: 'The requested blog post could not be found.',
     };
   }
   
   return {
-    title: `${post.title} | Tech & Automation Stuff`,
+    title: `${post.title} | Italicninja does Tech & Automation Stuff`,
     description: post.excerpt,
   };
 }
 
-export default function BlogPostPage({ params }: BlogPostPageProps) {
-  const post = getPostBySlug(params.slug);
+export default async function BlogPostPage(
+  { params }: BlogPostPageProps
+) {
+  const post = await getPostBySlug(params.slug);
   
   if (!post) {
     notFound();
   }
   
-  const relatedPosts = getRecentPosts(3).filter(p => p.slug !== post.slug);
+  const relatedPosts = (await getRecentPosts(3)).filter(p => p.slug !== post.slug);
 
   return (
     <>

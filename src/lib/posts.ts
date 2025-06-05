@@ -43,7 +43,7 @@ export function getAllPostSlugs() {
   return slugs;
 }
 
-export function getPostBySlug(slug: string): Post | undefined {
+export async function getPostBySlug(slug: string): Promise<Post | undefined> {
   // Find the post in all timestamp directories
   const timestampDirs = fs.readdirSync(postsDirectory);
   
@@ -69,8 +69,8 @@ export function getPostBySlug(slug: string): Post | undefined {
     const { data, content } = matter(fileContents);
     
     // Ensure tags are in the correct format
-    const tags = typeof data.tags === 'string' 
-      ? data.tags.split(',') 
+    const tags = typeof data.tags === 'string'
+      ? data.tags.split(',')
       : Array.isArray(data.tags) ? data.tags : [];
     
     return {
@@ -96,7 +96,7 @@ export async function getPostContentHtml(content: string): Promise<string> {
   return processedContent.toString();
 }
 
-export function getAllPosts(): Post[] {
+export async function getAllPosts(): Promise<Post[]> {
   // Get all timestamp directories
   const timestampDirs = fs.readdirSync(postsDirectory);
   
@@ -123,8 +123,8 @@ export function getAllPosts(): Post[] {
         const { data, content } = matter(fileContents);
         
         // Ensure tags are in the correct format
-        const tags = typeof data.tags === 'string' 
-          ? data.tags.split(',') 
+        const tags = typeof data.tags === 'string'
+          ? data.tags.split(',')
           : Array.isArray(data.tags) ? data.tags : [];
         
         return {
@@ -143,10 +143,10 @@ export function getAllPosts(): Post[] {
   return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-export function getRecentPosts(count: number = 3): Post[] {
-  return getAllPosts().slice(0, count);
+export async function getRecentPosts(count: number = 3): Promise<Post[]> {
+  return (await getAllPosts()).slice(0, count);
 }
 
-export function getPostsByTag(tag: string): Post[] {
-  return getAllPosts().filter(post => post.tags.includes(tag));
+export async function getPostsByTag(tag: string): Promise<Post[]> {
+  return (await getAllPosts()).filter(post => post.tags.includes(tag));
 }

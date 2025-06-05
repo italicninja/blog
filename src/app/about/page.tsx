@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: 'About | Tech & Automation Stuff',
+  title: 'About | Italicninja does Tech & Automation Stuff',
   description: 'A bit about me and what I do with computers and automation.',
 };
 
