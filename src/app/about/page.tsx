@@ -1,5 +1,3 @@
-import Image from "next/image";
-import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -26,15 +24,15 @@ export default function AboutPage() {
             <div className="bg-background border border-gray-200 dark:border-gray-800 rounded-lg shadow-small overflow-hidden mb-16 p-8">
               <div className="prose prose-lg dark:prose-invert max-w-none">
                 <p>
-                  I'm a Sysadmin who's obsessed with making computers do the boring work for us. I spend way too much time automating tasks that would probably take less time to do manually... but where's the fun in that?
+                  I&apos;m a Sysadmin who&apos;s obsessed with making computers do the boring work for us. I spend way too much time automating tasks that would probably take less time to do manually... but where&apos;s the fun in that?
                 </p>
 
                 <p>
-                  I mess around with DevOps tools, Puppet, and all that infrastructure stuff. I've built some cool automation with Terraform and Puppet that saved my team from the mind-numbing task of setting up servers manually.
+                  I mess around with DevOps tools, Puppet, and all that infrastructure stuff. I&apos;ve built some cool automation with Terraform and Puppet that saved my team from the mind-numbing task of setting up servers manually.
                 </p>
 
                 <p>
-                  When I'm not glued to my terminal, I'm probably trying to convince my coworkers that we can automate just about anything. They're starting to hide from me when they see me coming with "another great idea."
+                  When I&apos;m not glued to my terminal, I&apos;m probably trying to convince my coworkers that we can automate just about anything. They&apos;re starting to hide from me when they see me coming with &quot;another great idea.&quot;
                 </p>
               </div>
 
@@ -52,7 +50,7 @@ export default function AboutPage() {
                   </li>
                   <li className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                     <span className="mr-2 text-accent">▹</span>
-                    CI/CD Pipelines (or as I call them, "robot assistants")
+                    CI/CD Pipelines (or as I call them, &quot;robot assistants&quot;)
                   </li>
                   <li className="flex items-center text-sm text-gray-600 dark:text-gray-300">
                     <span className="mr-2 text-accent">▹</span>

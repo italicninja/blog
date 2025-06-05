@@ -130,7 +130,7 @@ export default async function Home() {
                     </svg>
                   </div>
                   <h3 className="text-xl font-medium text-foreground mb-3">Code That Builds Stuff</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">Because clicking buttons is boring - let's make Terraform and Puppet do it for us!</p>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">Because clicking buttons is boring - let&apos;s make Terraform and Puppet do it for us!</p>
                 </div>
 
                 <div className="group relative bg-background border border-gray-200 dark:border-gray-800 rounded-lg p-8 transition-all duration-200 hover:shadow-medium">

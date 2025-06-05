@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getPostBySlug, getRecentPosts, getPostContentHtml, getAllPostSlugs } from "@/lib/posts";
+import { getPostBySlug, getRecentPosts, getAllPostSlugs } from "@/lib/posts";
 import { formatDate } from "@/utils/date";
 import type { Metadata } from "next";
 import PostContent from "./post-content";
