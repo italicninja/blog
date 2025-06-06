@@ -6,7 +6,7 @@ import { getAllPosts } from "@/lib/posts";
 import { formatDate } from "@/utils/date";
 
 export const metadata = {
-  title: 'Blog | Italicninja does Tech & Automation Stuff',
+  title: 'Blog | Italicninja and adventures in Tech & Automation',
   description: 'My random thoughts on DevOps, automation, and teaching robots to do my job.',
 };
 
@@ -16,7 +16,7 @@ export default async function BlogPage() {
   return (
     <>
       <Header />
-      
+
       <main className="min-h-screen">
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-7xl mx-auto">
@@ -26,7 +26,7 @@ export default async function BlogPage() {
                 Random brain dumps about tech stuff I find interesting. No boring corporate speak here!
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {posts.map((post) => (
                 <article key={post.slug} className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-200 hover:shadow-medium">
