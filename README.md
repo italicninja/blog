@@ -25,8 +25,8 @@ A casual blog about DevOps, automation, and teaching robots to do my job, built 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/pixel-blog.git
-cd pixel-blog
+git clone https://github.com/yourusername/blog.git
+cd blog
 ```
 
 2. Install dependencies:
@@ -102,7 +102,7 @@ Write your post content here using Markdown.
 
 ### Option 1: One-Click Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fpixel-blog)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fblog-blog)
 
 ### Option 2: Manual Deployment
 
