@@ -1,4 +1,4 @@
-# Italicninja does Tech & Automation Stuff
+# Italicninja and adventures in Tech & Automation
 
 A casual blog about DevOps, automation, and teaching robots to do my job, built with Next.js and Tailwind CSS for deployment on Vercel.
 

@@ -31,7 +31,7 @@ export default function Header() {
               scrolled ? 'text-lg' : 'text-2xl'
             }`}
           >
-            Italicninja does Tech & Automation Stuff
+            Italicninja and adventures in Tech & Automation
           </Link>
           <nav className="flex items-center space-x-4">
             <a
