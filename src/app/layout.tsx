@@ -14,7 +14,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Italicninja and adventures in Tech & Automation",
+  title: "Italicninja \nAdventures in Tech & Automation",
   description: "Random thoughts on DevOps, automation, and teaching robots to do my job",
 };
 
