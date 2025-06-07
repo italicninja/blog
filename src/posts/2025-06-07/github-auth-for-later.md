@@ -7,6 +7,8 @@ tags: github,auth,security,ai
 
 # Github Auth for later
 
+*June 6, 2025 - 9:43 PM*
+
 So today I ran into the downside of writing blog posts in markdown files: you have to commit every single post. Which is... fine. But also kinda slow, especially when I don’t feel like doing all the usual git add ., git commit -m "new post", git push dance just to say I wrote a few paragraphs.
 
 To fix that, I kicked off part one of a little three-part project. Step one? GitHub authentication.
