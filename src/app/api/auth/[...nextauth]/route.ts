@@ -16,7 +16,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Dynamically determine the base URL for any environment
   basePath: "/api/auth",
   callbacks: {
-    async redirect({ url, baseUrl }) {
+    async redirect({ url }) {
       // Always use the dynamically determined base URL
       const dynamicBaseUrl = getBaseUrl();
 
