@@ -4,8 +4,10 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { Suspense } from "react";
 
-export default function AuthError() {
+// Client component that uses searchParams
+function AuthErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
@@ -63,5 +65,31 @@ export default function AuthError() {
       </main>
       <Footer />
     </>
+  );
+}
+
+// Page component with Suspense boundary
+export default function AuthError() {
+  return (
+    <Suspense fallback={
+      <>
+        <Header />
+        <main className="min-h-screen py-12">
+          <div className="container mx-auto px-4">
+            <div className="max-w-md mx-auto bg-background border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm p-8">
+              <div className="text-center mb-6">
+                <h1 className="mt-4 text-2xl font-bold text-foreground">Authentication Error</h1>
+              </div>
+              <div className="flex justify-center">
+                <div className="animate-pulse">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    }>
+      <AuthErrorContent />
+    </Suspense>
   );
 }

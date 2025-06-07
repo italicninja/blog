@@ -1,12 +1,13 @@
-import NextAuth from "next-auth";
-import GitHub from "next-auth/providers/github";
+import NextAuth from "next-auth/next";
+import GithubProvider from "next-auth/providers/github";
 import { getBaseUrl } from "@/lib/auth-utils";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+// Configure NextAuth options
+const authOptions = {
   providers: [
-    GitHub({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
+    GithubProvider({
+      clientId: process.env.GITHUB_ID || "",
+      clientSecret: process.env.GITHUB_SECRET || "",
     }),
   ],
   pages: {
@@ -16,7 +17,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Dynamically determine the base URL for any environment
   basePath: "/api/auth",
   callbacks: {
-    async redirect({ url }) {
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       // Always use the dynamically determined base URL
       const dynamicBaseUrl = getBaseUrl();
 
@@ -32,6 +33,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return dynamicBaseUrl;
     }
   }
-});
+};
 
-export const { GET, POST } = handlers;
+// Export the NextAuth handler
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };

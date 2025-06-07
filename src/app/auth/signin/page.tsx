@@ -2,11 +2,12 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-export default function SignIn() {
+// Client component that uses searchParams
+function SignInContent() {
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -64,5 +65,29 @@ export default function SignIn() {
       </main>
       <Footer />
     </>
+  );
+}
+
+// Page component with Suspense boundary
+export default function SignIn() {
+  return (
+    <Suspense fallback={
+      <>
+        <Header />
+        <main className="min-h-screen py-12">
+          <div className="container mx-auto px-4">
+            <div className="max-w-md mx-auto bg-background border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm p-8">
+              <h1 className="text-2xl font-bold mb-6 text-center">Sign In</h1>
+              <div className="flex justify-center">
+                <div className="animate-pulse">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }
