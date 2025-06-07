@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: 'About | Italicninja and adventures in Tech & Automation',
+  title: 'About | Italicninja',
   description: 'A bit about me and what I do with computers and automation.',
 };
 
@@ -15,7 +15,7 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto">
             <header className="mb-16 text-center">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-6">Hey There! 👋</h1>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">Hey There!</h1><h1>👋</h1>
               <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
                 Just a tech nerd who loves automating boring stuff
               </p>

@@ -20,13 +20,13 @@ export async function generateMetadata(
 
   if (!post) {
     return {
-      title: 'Post Not Found | Italicninja and adventures in Tech & Automation',
+      title: 'Post Not Found | Italicninja',
       description: 'The requested blog post could not be found.',
     };
   }
 
   return {
-    title: `${post.title} | Italicninja and adventures in Tech & Automation`,
+    title: `${post.title} | Italicninja`,
     description: post.excerpt,
   };
 }
@@ -57,7 +57,7 @@ export default async function BlogPostPage(
                   {formatDate(post.date)}
                 </time>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-6">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
                 {post.title}
               </h1>
               <div className="flex flex-wrap gap-2 mb-10">
