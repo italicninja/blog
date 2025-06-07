@@ -10,6 +10,7 @@
     "new-post": "node scripts/create-post.js"
   },
   "dependencies": {
+    "framer-motion": "^12.16.0",
     "gray-matter": "^4.0.3",
     "next": "^15.3.3",
     "next-auth": "^4.24.5",

@@ -77,7 +77,7 @@ export default function Header() {
               scrolled ? 'text-lg' : 'text-2xl'
             }`}
           >
-            Italicninja and adventures in Tech & Automation
+            italicninja
           </Link>
           <nav className="flex items-center space-x-4">
             {isSessionLoading ? (

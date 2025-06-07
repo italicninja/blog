@@ -32,16 +32,9 @@ export default async function BlogPage() {
             </div>
 
             <AnimatedContainer className="flex flex-col lg:flex-row gap-8 mb-16">
-              {/* Main Content - Blog Posts Grid */}
-              {/* Sidebar - GitHub Projects (visible first on mobile) */}
-              <div className="lg:w-1/3 mb-8 lg:mb-0 lg:order-2">
-                <div className="sticky top-24">
-                  <GitHubProjectsCard projects={topProjects} />
-                </div>
-              </div>
 
               {/* Main Content - Blog Posts Grid */}
-              <div className="lg:w-2/3 lg:order-1">
+              <div className="w-full lg:w-2/3">
                 <h2 className="text-2xl font-bold tracking-tight text-foreground mb-8 pb-4 border-b border-gray-200 dark:border-gray-700">
                   All Posts
                 </h2>
