@@ -41,8 +41,15 @@ export default async function Home() {
           <div className="container mx-auto px-4">
             <div className="max-w-7xl mx-auto">
               <AnimatedContainer className="flex flex-col lg:flex-row gap-8 items-start">
+                {/* Sidebar - GitHub Projects (on left side) */}
+                <div className="w-full lg:w-1/3 mb-8 lg:mb-0 order-2 lg:order-1">
+                  <div className="sticky top-24">
+                    <GitHubProjectsCard projects={topProjects} />
+                  </div>
+                </div>
+
                 {/* Main Content - Recent Posts */}
-                <div className="lg:w-2/3">
+                <div className="w-full lg:w-2/3 order-1 lg:order-2">
                   <div className="flex justify-between items-center mb-10">
                     <AnimatedHeading className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
                       Recent Posts
@@ -64,13 +71,6 @@ export default async function Home() {
                     {recentPosts.map((post, index) => (
                       <EnhancedBlogCard key={post.slug} post={post} index={index} />
                     ))}
-                  </div>
-                </div>
-
-                {/* Sidebar - GitHub Projects */}
-                <div className="lg:w-1/3 mt-8 lg:mt-0">
-                  <div className="sticky top-24">
-                    <GitHubProjectsCard projects={topProjects} />
                   </div>
                 </div>
               </AnimatedContainer>
