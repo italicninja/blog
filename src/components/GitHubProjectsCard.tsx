@@ -22,7 +22,7 @@ export default function GitHubProjectsCard({ projects }: GitHubProjectsCardProps
         
         <div className="relative flex justify-between items-center p-6">
           <h2 className="text-2xl font-bold tracking-tight text-white">
-            Top GitHub Projects
+            My GitHub Stuff
           </h2>
           <Link
             href="https://github.com/italicninja"
