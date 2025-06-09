@@ -9,7 +9,7 @@
       }
     }
   ],
-  "buildEnv": {
-    "NEXTAUTH_URL": "https://${VERCEL_URL}"
+  "env": {
+    "NEXTAUTH_URL": "https://blog-italicninjas-projects.vercel.app"
   }
 }
