@@ -3,7 +3,7 @@ import GithubProvider from "next-auth/providers/github";
 import { getBaseUrl } from "@/lib/auth-utils";
 
 // Configure NextAuth options
-const authOptions = {
+export const authOptions = {
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_ID || "",
