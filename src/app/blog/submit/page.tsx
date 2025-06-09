@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BlogSubmissionForm from '@/components/BlogSubmissionForm';
 import { isAuthorizedPoster } from '@/lib/authorized-posters';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth-options';
 
 export const metadata = {
   title: 'Submit Blog Post | Italicninja',

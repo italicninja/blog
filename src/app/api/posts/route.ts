@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { isAuthorizedPoster, hasPermission } from '@/lib/authorized-posters';
 import prisma from '@/lib/prisma';
 import slugify from 'slugify';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth-options';
 
 // Helper function to generate a unique slug
 async function generateUniqueSlug(title: string): Promise<string> {

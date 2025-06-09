@@ -7,7 +7,7 @@ import {
   getAllAuthorizedPosters
 } from '@/lib/authorized-posters';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth-options';
 
 // Helper function to check if the current user is an admin
 async function isAdmin(githubLogin: string): Promise<boolean> {
