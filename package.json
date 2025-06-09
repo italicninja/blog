@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "new-post": "node scripts/create-post.js",
     "add-poster": "node scripts/add-authorized-poster.js",
-    "grant-access": "node scripts/grant-permanent-access.js"
+    "grant-access": "node scripts/grant-permanent-access.js",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",
