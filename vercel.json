@@ -9,18 +9,7 @@
       }
     }
   ],
-  "env": {
-    "NEXTAUTH_URL": {
-      "type": "string"
-    },
-    "NEXTAUTH_SECRET": {
-      "type": "string"
-    },
-    "GITHUB_ID": {
-      "type": "string"
-    },
-    "GITHUB_SECRET": {
-      "type": "string"
-    }
+  "buildEnv": {
+    "NEXTAUTH_URL": "https://${VERCEL_URL}"
   }
 }
