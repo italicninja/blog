@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const githubLogin = session.user.name || '';
+    const githubLogin = session.user.githubLogin || session.user.name || '';
     
     // Check if the user is an admin
     if (!githubLogin || !(await isAdmin(githubLogin))) {
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const currentUserLogin = session.user.name || '';
+    const currentUserLogin = session.user.githubLogin || session.user.name || '';
     
     // Check if the user is an admin
     if (!currentUserLogin || !(await isAdmin(currentUserLogin))) {
@@ -159,7 +159,7 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const currentUserLogin = session.user.name || '';
+    const currentUserLogin = session.user.githubLogin || session.user.name || '';
     
     // Check if the user is an admin
     if (!currentUserLogin || !(await isAdmin(currentUserLogin))) {

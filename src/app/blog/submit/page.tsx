@@ -14,7 +14,7 @@ export const metadata = {
 export default async function SubmitBlogPage() {
   // Check if the user is authenticated and authorized
   const session = await getServerSession(authOptions);
-  const githubLogin = session?.user?.name || '';
+  const githubLogin = session?.user?.githubLogin || session?.user?.name || '';
   const isAuthorized = await isAuthorizedPoster(githubLogin);
   
   // If the user is not authenticated, redirect to the sign-in page

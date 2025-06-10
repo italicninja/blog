@@ -13,6 +13,35 @@ A casual blog about DevOps, automation, and teaching robots to do my job, built 
 - Post creation script for easy content management
 - Ready for Vercel deployment
 
+## Authentication
+
+This blog uses GitHub OAuth for authentication and has a custom authorization system for controlling who can submit blog posts.
+
+### Authentication Setup
+
+Run the authentication setup script to configure all environments:
+
+```bash
+node scripts/setup-auth-env.js
+```
+
+This script will:
+- Set up environment variables for development, preview, and production
+- Provide instructions for GitHub OAuth configuration
+- Ensure consistent authentication across all environments
+
+### Authorization for Blog Posts
+
+By default, only users in the `AuthorizedPoster` database table can submit blog posts. The username "italicninja" is always authorized.
+
+To add a new authorized poster:
+
+```bash
+node scripts/add-authorized-poster.js <github-username>
+```
+
+For more details on authentication and troubleshooting, see [Authentication Troubleshooting](./docs/auth-troubleshooting.md).
+
 ## Getting Started
 
 ### Prerequisites

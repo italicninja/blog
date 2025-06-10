@@ -128,6 +128,9 @@ export default function Header() {
                   <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
                     <p className="text-sm font-medium text-foreground truncate">{session.user?.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{session.user?.email}</p>
+                    {session.user?.githubLogin && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{session.user.githubLogin}</p>
+                    )}
                   </div>
                   <Link
                     href="/blog/submit"
