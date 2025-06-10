@@ -3,6 +3,8 @@
 import { useState, useRef, FormEvent, ChangeEvent } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { OurUploadDropzone } from '@/components/UploadThingProvider';
 
 interface FormData {
   title: string;
@@ -18,6 +20,8 @@ export default function BlogSubmissionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     title: '',
     content: '',
@@ -72,6 +76,11 @@ export default function BlogSubmissionForm() {
       }
       if (!formData.content.trim()) {
         throw new Error('Content is required');
+      }
+
+      // Check if an upload is in progress
+      if (isUploading) {
+        throw new Error('Please wait for the image upload to complete');
       }
 
       // Submit the form data
@@ -185,20 +194,80 @@ export default function BlogSubmissionForm() {
           />
         </div>
         
-        {/* Cover Image URL */}
+        {/* Cover Image Upload */}
         <div>
-          <label htmlFor="coverImage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Cover Image URL
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Cover Image
           </label>
-          <input
-            type="url"
-            id="coverImage"
-            name="coverImage"
-            value={formData.coverImage}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            placeholder="https://example.com/image.jpg"
-          />
+
+          {formData.coverImage ? (
+            <div className="relative mb-4">
+              <div className="relative w-full h-48 rounded-md overflow-hidden">
+                <Image
+                  src={formData.coverImage}
+                  alt="Cover image preview"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, coverImage: '' }))}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                aria-label="Remove image"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div className="mb-4">
+              <OurUploadDropzone
+                endpoint="imageUploader"
+                onClientUploadComplete={(res: Array<{ url: string }>) => {
+                  if (res && res.length > 0) {
+                    setFormData(prev => ({ ...prev, coverImage: res[0].url }));
+                  }
+                  setIsUploading(false);
+                  setUploadProgress(null);
+                }}
+                onUploadError={(error: Error) => {
+                  setError(`Upload failed: ${error.message}`);
+                  setIsUploading(false);
+                  setUploadProgress(null);
+                }}
+                onUploadBegin={() => {
+                  setIsUploading(true);
+                  setError(null);
+                }}
+                onUploadProgress={(progress: number) => {
+                  setUploadProgress(progress);
+                }}
+                className="ut-button:bg-indigo-600 ut-button:hover:bg-indigo-700 ut-label:text-gray-700 dark:ut-label:text-gray-300 ut-upload-icon:text-indigo-500"
+              />
+              {isUploading && uploadProgress !== null && (
+                <div className="mt-2">
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div
+                      className="bg-indigo-600 h-2.5 rounded-full"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">Uploading: {uploadProgress}%</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {formData.coverImage && (
+            <input
+              type="hidden"
+              id="coverImage"
+              name="coverImage"
+              value={formData.coverImage}
+            />
+          )}
         </div>
         
         {/* Tags */}
@@ -274,7 +343,7 @@ export default function BlogSubmissionForm() {
         <div>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploading}
             className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
@@ -284,6 +353,14 @@ export default function BlogSubmissionForm() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 Submitting...
+              </span>
+            ) : isUploading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Uploading Image...
               </span>
             ) : (
               'Submit Blog Post'
