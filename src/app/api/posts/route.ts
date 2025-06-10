@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const githubLogin = session.user.name || '';
+    const githubLogin = session.user.githubLogin || session.user.name || '';
     
     // Special case for italicninja - always authorized
     if (githubLogin === 'italicninja') {
