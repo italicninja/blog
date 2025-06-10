@@ -1,7 +1,7 @@
 import GithubProvider from "next-auth/providers/github";
 import { getBaseUrl } from "@/lib/auth-utils";
 import { JWT } from "next-auth/jwt";
-import { Session } from "next-auth";
+import { Session, AuthOptions, Account, Profile, User } from "next-auth";
 
 // Extend the Session type to include githubLogin
 declare module "next-auth" {
@@ -23,7 +23,7 @@ declare module "next-auth/jwt" {
 }
 
 // Configure NextAuth options
-export const authOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_ID || "",
@@ -43,10 +43,9 @@ export const authOptions = {
     signIn: "/auth/signin",
     error: "/auth/error",
   },
-  // Dynamically determine the base URL for any environment
-  basePath: "/api/auth",
+  // Base path is automatically set to /api/auth
   callbacks: {
-    async session({ session, token }: { session: Session; token: JWT }) {
+    async session({ session, token }) {
       // Add the GitHub login to the session
       if (session.user) {
         session.user.githubLogin = token.githubLogin;
@@ -55,17 +54,17 @@ export const authOptions = {
     },
     async jwt({ token, user, account, profile }: {
       token: JWT;
-      user?: any;
-      account?: { provider: string; };
-      profile?: any;
+      user?: User;
+      account: Account | null;
+      profile?: Profile & { login?: string };
     }) {
       // Add the GitHub login to the token
-      if (profile && account?.provider === 'github') {
+      if (profile && account?.provider === 'github' && profile.login) {
         token.githubLogin = profile.login;
       }
       return token;
     },
-    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+    async redirect({ url, baseUrl }) {
       // Always use the dynamically determined base URL
       const dynamicBaseUrl = getBaseUrl();
 
