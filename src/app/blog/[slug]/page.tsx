@@ -8,6 +8,7 @@ import { formatDate } from "@/utils/date";
 import type { Metadata } from "next";
 import PostContent from "./post-content";
 import { Suspense } from "react";
+import { getImageUrl, isValidImageData } from "@/lib/uploadthing-utils";
 
 // Define a custom type that satisfies both the Promise interface and has the slug property
 type ParamsWithPromise = Promise<{ slug: string }> & { slug: string };
@@ -36,7 +37,7 @@ export async function generateMetadata(
     openGraph: {
       title: post.title,
       description: post.excerpt,
-      images: post.coverImage ? [post.coverImage] : [],
+      images: post.coverImage ? [getImageUrl(post.coverImage)] : [],
       type: 'article',
       publishedTime: post.date,
     },
@@ -126,10 +127,10 @@ export default async function BlogPostPage(
                   </Link>
                 ))}
               </div>
-              {post.coverImage && (
+              {post.coverImage && isValidImageData(post.coverImage) && (
                 <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden mb-12">
                   <Image
-                    src={post.coverImage}
+                    src={getImageUrl(post.coverImage)}
                     alt={post.title}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
@@ -204,9 +205,9 @@ export default async function BlogPostPage(
                 {relatedPosts.map((relatedPost) => (
                   <article key={relatedPost.slug} className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-200 hover:shadow-medium">
                     <div className="relative aspect-[16/9] w-full overflow-hidden">
-                      {relatedPost.coverImage ? (
+                      {relatedPost.coverImage && isValidImageData(relatedPost.coverImage) ? (
                         <Image
-                          src={relatedPost.coverImage}
+                          src={getImageUrl(relatedPost.coverImage)}
                           alt={relatedPost.title}
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"

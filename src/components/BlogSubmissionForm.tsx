@@ -12,6 +12,7 @@ import {
   replaceImageUrls,
   useUploadThing
 } from '@/lib/image-utils';
+import { imageUrlToMetadata } from '@/lib/uploadthing-utils';
 
 interface FormData {
   title: string;
@@ -147,9 +148,18 @@ export default function BlogSubmissionForm() {
 
       // Create a map of original paths to new URLs
       const replacements = new Map<string, string>();
+      const imageMetadataMap = new Map<string, string>();
+
       localImageRefs.forEach((img, index) => {
         if (index < uploadResults.length) {
-          replacements.set(img.path, uploadResults[index].url);
+          const url = uploadResults[index].url;
+          replacements.set(img.path, url);
+
+          // Also store metadata for each image
+          const metadata = imageUrlToMetadata(url, img.alt);
+          if (metadata) {
+            imageMetadataMap.set(url, metadata);
+          }
         }
       });
 
@@ -207,12 +217,15 @@ export default function BlogSubmissionForm() {
         setFormData(prev => ({ ...prev, coverImage: firstImageUrl }));
       }
 
+      // Convert cover image URL to metadata for storage
+      const coverImageMetadata = coverImage ? imageUrlToMetadata(coverImage, "Cover image for post") : null;
+
       // Prepare data for submission
       const submissionData = {
         ...formData,
         content: processedContent,
         excerpt: sanitizedExcerpt,
-        coverImage: coverImage,
+        coverImage: coverImageMetadata || coverImage, // Use metadata if available, fallback to URL
       };
 
       // Submit the form data
@@ -371,9 +384,12 @@ export default function BlogSubmissionForm() {
             <div className="mb-4">
               <OurUploadDropzone
                 endpoint="imageUploader"
-                onClientUploadComplete={(res: Array<{ url: string }>) => {
+                onClientUploadComplete={(res: Array<{ url: string; fileKey?: string }>) => {
                   if (res && res.length > 0) {
-                    setFormData(prev => ({ ...prev, coverImage: res[0].url }));
+                    // Store the metadata instead of just the URL
+                    const imageMetadata = imageUrlToMetadata(res[0].url, "Cover image for post");
+                    setFormData(prev => ({ ...prev, coverImage: res[0].url })); // Keep URL for UI display
+                    // The actual metadata will be sent to the server during submission
                   }
                   setIsUploading(false);
                   setUploadProgress(null);

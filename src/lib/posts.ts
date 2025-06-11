@@ -3,6 +3,7 @@ import html from 'remark-html';
 import prisma from '@/lib/prisma';
 import { Post as PrismaPost, Tag, User } from '@prisma/client';
 import { cache } from 'react';
+import { getImageUrl } from '@/lib/uploadthing-utils';
 
 export interface Post {
   id: string;
@@ -92,7 +93,23 @@ export async function getPostContentHtml(content: string): Promise<string> {
     .use(html)
     .process(content);
     
-  return processedContent.toString();
+  let htmlContent = processedContent.toString();
+
+  // Process image URLs in the HTML content
+  // This regex matches <img> tags with src attributes
+  const imgRegex = /<img([^>]*)src=["']([^"']*)["']([^>]*)>/g;
+
+  // Replace image URLs with the proper UploadThing URLs
+  htmlContent = htmlContent.replace(imgRegex, (match, before, src, after) => {
+    // Check if the src is a JSON string (metadata) or needs to be processed
+    if (src.startsWith('{') || src.includes('uploadthing.com')) {
+      const processedSrc = getImageUrl(src);
+      return `<img${before}src="${processedSrc}"${after}>`;
+    }
+    return match; // Return unchanged if not an UploadThing image
+  });
+
+  return htmlContent;
 }
 
 // Get all posts with pagination and sorting
