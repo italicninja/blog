@@ -24,12 +24,11 @@ interface BlogPageProps {
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
-  // Parse query parameters - await the searchParams
-  const params = await searchParams;
-  const currentPage = params.page ? parseInt(params.page, 10) : 1;
-  const tag = params.tag || null;
-  const search = params.search || null;
-  const sort = params.sort || 'newest';
+  // Parse query parameters
+  const currentPage = searchParams.page ? parseInt(searchParams.page, 10) : 1;
+  const tag = searchParams.tag || null;
+  const search = searchParams.search || null;
+  const sort = searchParams.sort || 'newest';
 
   // Determine sort options
   const sortOptions: Record<string, { orderBy: 'createdAt' | 'publishedAt' | 'title', orderDirection: 'asc' | 'desc' }> = {
