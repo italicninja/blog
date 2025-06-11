@@ -107,7 +107,7 @@ export default function BlogSubmissionForm() {
   const { startUpload } = useUploadThing("imageUploader");
 
   // Process content images
-  const processContentImages = useCallback(async (content: string): Promise<string> => {
+  const processContentImages = useCallback(async (content: string): Promise<{ processedContent: string; firstImageUrl?: string }> => {
     // Extract image references from content
     const imageRefs = extractImageReferences(content);
 
@@ -116,7 +116,7 @@ export default function BlogSubmissionForm() {
 
     // If no local images, return the original content
     if (localImageRefs.length === 0) {
-      return content;
+      return { processedContent: content };
     }
 
     setProcessingImages(true);
@@ -133,7 +133,7 @@ export default function BlogSubmissionForm() {
 
       if (validImageFiles.length === 0) {
         setImageProcessingStatus("No valid images to upload");
-        return content;
+        return { processedContent: content };
       }
 
       setImageProcessingStatus(`Uploading ${validImageFiles.length} images...`);
@@ -156,12 +156,18 @@ export default function BlogSubmissionForm() {
       // Replace image URLs in content
       const updatedContent = replaceImageUrls(content, replacements);
 
+      // Get the first uploaded image URL for potential use as cover image
+      const firstImageUrl = uploadResults.length > 0 ? uploadResults[0].url : undefined;
+
       setImageProcessingStatus("Image processing complete");
-      return updatedContent;
+      return {
+        processedContent: updatedContent,
+        firstImageUrl
+      };
     } catch (error) {
       console.error("Error processing content images:", error);
       setError(`Error processing images: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return content;
+      return { processedContent: content };
     } finally {
       setProcessingImages(false);
     }
@@ -191,13 +197,22 @@ export default function BlogSubmissionForm() {
       const sanitizedExcerpt = formData.excerpt ? sanitizeContent(formData.excerpt) : '';
 
       // Process content images - upload local images and update references
-      const processedContent = await processContentImages(sanitizedContent);
+      const { processedContent, firstImageUrl } = await processContentImages(sanitizedContent);
+
+      // If no cover image is provided, use the first image from the content
+      let coverImage = formData.coverImage;
+      if (!coverImage && firstImageUrl) {
+        coverImage = firstImageUrl;
+        // Update the UI to show the automatically selected cover image
+        setFormData(prev => ({ ...prev, coverImage: firstImageUrl }));
+      }
 
       // Prepare data for submission
       const submissionData = {
         ...formData,
         content: processedContent,
         excerpt: sanitizedExcerpt,
+        coverImage: coverImage,
       };
 
       // Submit the form data
@@ -328,7 +343,7 @@ export default function BlogSubmissionForm() {
         {/* Cover Image Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Cover Image
+            Cover Image <span className="text-xs text-gray-500">(Optional - first image in content will be used if not provided)</span>
           </label>
 
           {formData.coverImage ? (
