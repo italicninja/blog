@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { formatDate } from '@/utils/date';
 import { motion } from 'framer-motion';
 import { Post } from '@/lib/posts';
+import { getImageUrl } from '@/lib/uploadthing-utils';
 
 interface EnhancedBlogCardProps {
   post: Post;
@@ -23,7 +24,7 @@ export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps)
       <div className="relative aspect-[16/9] w-full overflow-hidden">
         {post.coverImage ? (
           <Image
-            src={post.coverImage}
+            src={post.coverImage.startsWith('{') ? getImageUrl(post.coverImage) : post.coverImage}
             alt={post.title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"

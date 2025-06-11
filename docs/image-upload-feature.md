@@ -12,6 +12,7 @@ When a user submits a blog post, the system automatically:
 4. Sets the first uploaded image as the cover image if none was provided
 5. Stores all images as metadata objects in the database
 6. Submits the post with the updated content
+7. Displays images using their UploadThing URLs throughout the blog interface
 
 ## How It Works
 
@@ -39,6 +40,8 @@ Only local images (those not starting with `http://`, `https://`, or `data:`) ar
 The user doesn't need to manually upload images referenced in their content. The system handles this automatically in the background during submission.
 
 The user will see a progress indicator during the image processing and upload.
+
+When viewing blog posts, all images are served directly from UploadThing's CDN, ensuring fast loading times and reliable image delivery.
 
 ### Automatic Cover Image Selection
 
@@ -116,3 +119,20 @@ When migrating existing posts:
 3. The migration should extract file keys from existing URLs
 4. JSON metadata objects should be created for each image
 5. The content should be updated to use the new metadata format
+
+## Image Rendering
+
+The system handles image rendering consistently across all blog interfaces:
+
+1. **Blog List Page**:
+   - The `EnhancedBlogCard` and `BlogCard` components check if the coverImage is in metadata format
+   - If it is, they use `getImageUrl()` to construct the proper UploadThing URL
+   - If not, they use the URL directly (for backward compatibility during migration)
+
+2. **Blog Post Page**:
+   - The `SafeImage` component handles metadata parsing for cover images
+   - The `getPostContentHtml` function processes image tags in the HTML content
+
+3. **Error Handling**:
+   - All image components include fallbacks for missing or invalid images
+   - The system gracefully handles cases where image metadata is malformed

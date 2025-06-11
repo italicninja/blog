@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { formatDate } from '@/utils/date';
+import { getImageUrl } from '@/lib/uploadthing-utils';
 
 interface BlogCardProps {
   post: {
@@ -16,13 +17,19 @@ export default function BlogCard({ post }: BlogCardProps) {
   return (
     <article className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-200 hover:shadow-medium">
       <div className="relative aspect-[16/9] w-full overflow-hidden">
-        <Image
-          src={post.coverImage}
-          alt={post.title}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+        {post.coverImage ? (
+          <Image
+            src={post.coverImage.startsWith('{') ? getImageUrl(post.coverImage) : post.coverImage}
+            alt={post.title}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <span className="text-gray-400 dark:text-gray-500 text-lg">No image</span>
+          </div>
+        )}
       </div>
       <div className="flex flex-col flex-grow p-6">
         <div className="mb-3">
