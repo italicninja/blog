@@ -7,6 +7,9 @@ import SortDropdown from "@/components/SortDropdown";
 import Link from "next/link";
 import { Suspense } from "react";
 
+// Define a custom type that satisfies both the Promise interface and has the searchParams properties
+type SearchParamsWithPromise = Promise<BlogPageProps['searchParams']> & BlogPageProps['searchParams'];
+
 export const metadata = {
   title: 'Blog | Italicninja',
   description: 'My random thoughts on DevOps, automation, and teaching robots to do my job.',
@@ -26,14 +29,13 @@ interface BlogPageProps {
 export default async function BlogPage({
   searchParams
 }: {
-  searchParams: Promise<BlogPageProps['searchParams']> | BlogPageProps['searchParams']
+  searchParams: SearchParamsWithPromise
 }) {
-  // Parse query parameters
-  const resolvedParams = searchParams instanceof Promise ? await searchParams : searchParams;
-  const currentPage = resolvedParams.page ? parseInt(resolvedParams.page, 10) : 1;
-  const tag = resolvedParams.tag || null;
-  const search = resolvedParams.search || null;
-  const sort = resolvedParams.sort || 'newest';
+  // Parse query parameters - access properties directly
+  const currentPage = searchParams.page ? parseInt(searchParams.page, 10) : 1;
+  const tag = searchParams.tag || null;
+  const search = searchParams.search || null;
+  const sort = searchParams.sort || 'newest';
 
   // Determine sort options
   const sortOptions: Record<string, { orderBy: 'createdAt' | 'publishedAt' | 'title', orderDirection: 'asc' | 'desc' }> = {

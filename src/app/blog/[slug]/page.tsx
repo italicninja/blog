@@ -9,15 +9,18 @@ import type { Metadata } from "next";
 import PostContent from "./post-content";
 import { Suspense } from "react";
 
+// Define a custom type that satisfies both the Promise interface and has the slug property
+type ParamsWithPromise = Promise<{ slug: string }> & { slug: string };
+
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> | { slug: string } }
+  { params }: { params: ParamsWithPromise }
 ): Promise<Metadata> {
-  const resolvedParams = params instanceof Promise ? await params : params;
-  const { slug } = resolvedParams;
+  // Access slug directly, it's available on both Promise and non-Promise
+  const { slug } = params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -41,10 +44,10 @@ export async function generateMetadata(
 }
 
 export default async function BlogPostPage(
-  { params }: { params: Promise<{ slug: string }> | { slug: string } }
+  { params }: { params: ParamsWithPromise }
 ) {
-  const resolvedParams = params instanceof Promise ? await params : params;
-  const { slug } = resolvedParams;
+  // Access slug directly, it's available on both Promise and non-Promise
+  const { slug } = params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
