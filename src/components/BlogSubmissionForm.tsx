@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, useRef, FormEvent, ChangeEvent } from 'react';
+import { useState, useRef, FormEvent, ChangeEvent, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { OurUploadDropzone } from '@/components/UploadThingProvider';
+import {
+  extractImageReferences,
+  filterLocalImages,
+  pathToFile,
+  replaceImageUrls,
+  useUploadThing
+} from '@/lib/image-utils';
 
 interface FormData {
   title: string;
@@ -22,6 +29,8 @@ export default function BlogSubmissionForm() {
   const [success, setSuccess] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [processingImages, setProcessingImages] = useState(false);
+  const [imageProcessingStatus, setImageProcessingStatus] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     title: '',
     content: '',
@@ -94,6 +103,70 @@ export default function BlogSubmissionForm() {
     return null;
   };
 
+  // Setup UploadThing for content images
+  const { startUpload } = useUploadThing("imageUploader");
+
+  // Process content images
+  const processContentImages = useCallback(async (content: string): Promise<string> => {
+    // Extract image references from content
+    const imageRefs = extractImageReferences(content);
+
+    // Filter to only include local images
+    const localImageRefs = filterLocalImages(imageRefs);
+
+    // If no local images, return the original content
+    if (localImageRefs.length === 0) {
+      return content;
+    }
+
+    setProcessingImages(true);
+    setImageProcessingStatus(`Processing ${localImageRefs.length} images...`);
+
+    try {
+      // Convert paths to File objects
+      const imageFiles: (File | null)[] = await Promise.all(
+        localImageRefs.map(img => pathToFile(img.path))
+      );
+
+      // Filter out null values (failed conversions)
+      const validImageFiles = imageFiles.filter((file): file is File => file !== null);
+
+      if (validImageFiles.length === 0) {
+        setImageProcessingStatus("No valid images to upload");
+        return content;
+      }
+
+      setImageProcessingStatus(`Uploading ${validImageFiles.length} images...`);
+
+      // Upload images to UploadThing
+      const uploadResults = await startUpload(validImageFiles);
+
+      if (!uploadResults || uploadResults.length === 0) {
+        throw new Error("Failed to upload images");
+      }
+
+      // Create a map of original paths to new URLs
+      const replacements = new Map<string, string>();
+      localImageRefs.forEach((img, index) => {
+        if (index < uploadResults.length) {
+          replacements.set(img.path, uploadResults[index].url);
+        }
+      });
+
+      // Replace image URLs in content
+      const updatedContent = replaceImageUrls(content, replacements);
+
+      setImageProcessingStatus("Image processing complete");
+      return updatedContent;
+    } catch (error) {
+      console.error("Error processing content images:", error);
+      setError(`Error processing images: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return content;
+    } finally {
+      setProcessingImages(false);
+    }
+  }, [startUpload]);
+
   // Handle form submission
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -117,10 +190,13 @@ export default function BlogSubmissionForm() {
       const sanitizedContent = sanitizeContent(formData.content);
       const sanitizedExcerpt = formData.excerpt ? sanitizeContent(formData.excerpt) : '';
 
+      // Process content images - upload local images and update references
+      const processedContent = await processContentImages(sanitizedContent);
+
       // Prepare data for submission
       const submissionData = {
         ...formData,
-        content: sanitizedContent,
+        content: processedContent,
         excerpt: sanitizedExcerpt,
       };
 
@@ -205,6 +281,18 @@ export default function BlogSubmissionForm() {
         </div>
       )}
       
+      {processingImages && imageProcessingStatus && (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-blue-600 dark:text-blue-400">
+          <div className="flex items-center">
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {imageProcessingStatus}
+          </div>
+        </div>
+      )}
+
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
         {/* Title */}
         <div>
@@ -380,13 +468,20 @@ export default function BlogSubmissionForm() {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             You can use Markdown syntax for formatting.
           </p>
+          <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-md">
+            <h4 className="text-sm font-medium text-blue-700 dark:text-blue-300">Automatic Image Handling</h4>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+              Local images referenced in your content (e.g., <code className="bg-blue-100 dark:bg-blue-800/30 px-1 py-0.5 rounded">![Alt text](image.jpg)</code>) will be automatically uploaded to our secure image hosting service.
+              The image references in your post will be updated with the new URLs.
+            </p>
+          </div>
         </div>
         
         {/* Submit Button */}
         <div>
           <button
             type="submit"
-            disabled={isSubmitting || isUploading}
+            disabled={isSubmitting || isUploading || processingImages}
             className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
@@ -403,7 +498,15 @@ export default function BlogSubmissionForm() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Uploading Image...
+                Uploading Cover Image...
+              </span>
+            ) : processingImages ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing Content Images...
               </span>
             ) : (
               'Submit Blog Post'
