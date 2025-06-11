@@ -62,6 +62,38 @@ export default function BlogSubmissionForm() {
     }));
   };
 
+  // Sanitize content
+  const sanitizeContent = (content: string): string => {
+    // Basic sanitization - remove any potentially harmful HTML
+    return content
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+  };
+
+  // Validate form data
+  const validateForm = (): string | null => {
+    if (!formData.title.trim()) {
+      return 'Title is required';
+    }
+    if (formData.title.length > 100) {
+      return 'Title must be less than 100 characters';
+    }
+    if (!formData.content.trim()) {
+      return 'Content is required';
+    }
+    if (formData.excerpt && formData.excerpt.length > 300) {
+      return 'Excerpt must be less than 300 characters';
+    }
+    if (formData.tags.length > 10) {
+      return 'Maximum of 10 tags allowed';
+    }
+    if (formData.tags.some(tag => tag.length > 30)) {
+      return 'Tags must be less than 30 characters each';
+    }
+    return null;
+  };
+
   // Handle form submission
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -71,11 +103,9 @@ export default function BlogSubmissionForm() {
 
     try {
       // Validate form data
-      if (!formData.title.trim()) {
-        throw new Error('Title is required');
-      }
-      if (!formData.content.trim()) {
-        throw new Error('Content is required');
+      const validationError = validateForm();
+      if (validationError) {
+        throw new Error(validationError);
       }
 
       // Check if an upload is in progress
@@ -83,13 +113,24 @@ export default function BlogSubmissionForm() {
         throw new Error('Please wait for the image upload to complete');
       }
 
+      // Sanitize content
+      const sanitizedContent = sanitizeContent(formData.content);
+      const sanitizedExcerpt = formData.excerpt ? sanitizeContent(formData.excerpt) : '';
+
+      // Prepare data for submission
+      const submissionData = {
+        ...formData,
+        content: sanitizedContent,
+        excerpt: sanitizedExcerpt,
+      };
+
       // Submit the form data
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submissionData),
       });
 
       const data = await response.json();
@@ -111,6 +152,8 @@ export default function BlogSubmissionForm() {
       // Redirect to the new post after a delay
       setTimeout(() => {
         router.push(`/blog/${data.slug}`);
+        // Refresh the page to update the cache
+        router.refresh();
       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

@@ -21,14 +21,20 @@ export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps)
       whileHover={{ y: -5 }}
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden">
-        <Image
-          src={post.coverImage}
-          alt={post.title}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
-          priority={index < 3}
-        />
+        {post.coverImage ? (
+          <Image
+            src={post.coverImage}
+            alt={post.title}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
+            priority={index < 3}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <span className="text-gray-400 dark:text-gray-500 text-lg">No image</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </div>
       
