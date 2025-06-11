@@ -3,19 +3,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getPostBySlug, getRecentPosts, getAllPostSlugs } from "@/lib/posts";
+import { getPostBySlug, getRecentPosts, getAllPostSlugs, getPostsByTag } from "@/lib/posts";
 import { formatDate } from "@/utils/date";
 import type { Metadata } from "next";
 import PostContent from "./post-content";
+import { Suspense } from "react";
 
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: { slug: string } }
 ): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug } = params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -28,20 +29,50 @@ export async function generateMetadata(
   return {
     title: `${post.title} | Italicninja`,
     description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      images: post.coverImage ? [post.coverImage] : [],
+      type: 'article',
+      publishedTime: post.date,
+    },
   };
 }
 
 export default async function BlogPostPage(
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: { slug: string } }
 ) {
-  const { slug } = await params;
+  const { slug } = params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
     notFound();
   }
 
-  const relatedPosts = (await getRecentPosts(3)).filter(p => p.slug !== post.slug);
+  // Get related posts - first try posts with the same tag, then fall back to recent posts
+  let relatedPosts: NonNullable<Awaited<ReturnType<typeof getPostBySlug>>>[] = [];
+  if (post.tags.length > 0) {
+    // Get posts with the same primary tag
+    const primaryTag = post.tags[0];
+    const taggedPosts = await getPostsByTag(primaryTag);
+    relatedPosts = taggedPosts.filter((p): p is NonNullable<typeof p> =>
+      p !== undefined && p.slug !== post.slug
+    ).slice(0, 3);
+  }
+
+  // If we don't have enough related posts by tag, add some recent posts
+  if (relatedPosts.length < 3) {
+    const recentPosts = await getRecentPosts(6);
+    const additionalPosts = recentPosts
+      .filter((p): p is NonNullable<typeof p> =>
+        p !== undefined &&
+        p.slug !== post.slug &&
+        !relatedPosts.some(rp => rp.slug === p.slug)
+      )
+      .slice(0, 3 - relatedPosts.length);
+
+    relatedPosts = [...relatedPosts, ...additionalPosts];
+  }
 
   return (
     <>
@@ -52,34 +83,56 @@ export default async function BlogPostPage(
           <div className="max-w-3xl mx-auto">
             {/* Post Header */}
             <header className="mb-12">
-              <div className="mb-4">
+              <div className="mb-4 flex items-center">
                 <time className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase" dateTime={post.date}>
                   {formatDate(post.date)}
                 </time>
+                {post.author && (
+                  <div className="ml-4 flex items-center">
+                    <span className="text-gray-400 mx-2">•</span>
+                    <div className="flex items-center">
+                      {post.author.image && (
+                        <Image
+                          src={post.author.image}
+                          alt={post.author.name || "Author"}
+                          width={24}
+                          height={24}
+                          className="rounded-full mr-2"
+                        />
+                      )}
+                      <span className="text-sm text-gray-600 dark:text-gray-300">
+                        {post.author.name}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
                 {post.title}
               </h1>
               <div className="flex flex-wrap gap-2 mb-10">
                 {post.tags.map((tag) => (
-                  <span
+                  <Link
                     key={tag}
-                    className="inline-block bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded-full"
+                    href={`/blog?tag=${encodeURIComponent(tag)}`}
+                    className="inline-block bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors"
                   >
                     {tag}
-                  </span>
+                  </Link>
                 ))}
               </div>
-              <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden mb-12">
-                <Image
-                  src={post.coverImage}
-                  alt={post.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
-                  className="object-cover"
-                  priority
-                />
-              </div>
+              {post.coverImage && (
+                <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden mb-12">
+                  <Image
+                    src={post.coverImage}
+                    alt={post.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              )}
             </header>
 
             {/* Post Content */}
@@ -146,13 +199,19 @@ export default async function BlogPostPage(
                 {relatedPosts.map((relatedPost) => (
                   <article key={relatedPost.slug} className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-200 hover:shadow-medium">
                     <div className="relative aspect-[16/9] w-full overflow-hidden">
-                      <Image
-                        src={relatedPost.coverImage}
-                        alt={relatedPost.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
+                      {relatedPost.coverImage ? (
+                        <Image
+                          src={relatedPost.coverImage}
+                          alt={relatedPost.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <span className="text-gray-400 dark:text-gray-500 text-lg">No image</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col flex-grow p-6">
                       <div className="mb-3">

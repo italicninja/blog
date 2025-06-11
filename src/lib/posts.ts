@@ -1,12 +1,11 @@
-import fs from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';
-
-const postsDirectory = path.join(process.cwd(), 'src/posts');
+import prisma from '@/lib/prisma';
+import { Post as PrismaPost, Tag, User } from '@prisma/client';
+import { cache } from 'react';
 
 export interface Post {
+  id: string;
   slug: string;
   title: string;
   excerpt: string;
@@ -14,79 +13,79 @@ export interface Post {
   date: string;
   coverImage: string;
   tags: string[];
+  author?: {
+    id: string;
+    name: string;
+    image: string;
+  };
 }
 
-export function getAllPostSlugs() {
-  // Get all timestamp directories
-  const timestampDirs = fs.readdirSync(postsDirectory);
-  
-  // Get all post files from each timestamp directory
-  const slugs = timestampDirs.flatMap(timestamp => {
-    const timestampPath = path.join(postsDirectory, timestamp);
-    
-    // Skip if not a directory
-    if (!fs.statSync(timestampPath).isDirectory()) {
-      return [];
-    }
-    
-    // Get all markdown files in the timestamp directory
-    return fs.readdirSync(timestampPath)
-      .filter(file => file.endsWith('.md'))
-      .map(file => ({
-        params: {
-          slug: file.replace(/\.md$/, ''),
-          timestamp
-        }
-      }));
-  });
-  
-  return slugs;
-}
-
-export async function getPostBySlug(slug: string): Promise<Post | undefined> {
-  // Find the post in all timestamp directories
-  const timestampDirs = fs.readdirSync(postsDirectory);
-  
-  for (const timestamp of timestampDirs) {
-    const timestampPath = path.join(postsDirectory, timestamp);
-    
-    // Skip if not a directory
-    if (!fs.statSync(timestampPath).isDirectory()) {
-      continue;
-    }
-    
-    const fullPath = path.join(timestampPath, `${slug}.md`);
-    
-    // Skip if file doesn't exist
-    if (!fs.existsSync(fullPath)) {
-      continue;
-    }
-    
-    // Read markdown file
-    const fileContents = fs.readFileSync(fullPath, 'utf8');
-    
-    // Parse markdown with gray-matter
-    const { data, content } = matter(fileContents);
-    
-    // Ensure tags are in the correct format
-    const tags = typeof data.tags === 'string'
-      ? data.tags.split(',')
-      : Array.isArray(data.tags) ? data.tags : [];
-    
-    return {
-      slug,
-      title: data.title || '',
-      excerpt: data.excerpt || '',
-      content,
-      date: timestamp, // Use the timestamp directory name as the date
-      coverImage: data.coverImage || '',
-      tags
+// Helper function to convert Prisma Post to our Post interface
+function convertPrismaPostToPost(
+  post: PrismaPost & {
+    tags?: Tag[];
+    author?: {
+      id: string;
+      name: string | null;
+      image: string | null;
     };
   }
-  
-  return undefined;
+): Post {
+  return {
+    id: post.id,
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt || '',
+    content: post.content,
+    date: post.publishedAt?.toISOString() || post.createdAt.toISOString(),
+    coverImage: post.coverImage || '',
+    tags: post.tags ? post.tags.map(tag => tag.name) : [],
+    author: post.author ? {
+      id: post.author.id,
+      name: post.author.name || '',
+      image: post.author.image || '',
+    } : undefined
+  };
 }
 
+// Get all post slugs for static generation
+export async function getAllPostSlugs() {
+  const posts = await prisma.post.findMany({
+    where: { published: true },
+    select: { slug: true },
+  });
+  
+  return posts.map(post => ({
+    params: {
+      slug: post.slug,
+    },
+  }));
+}
+
+// Get a post by slug
+export const getPostBySlug = cache(async (slug: string): Promise<Post | undefined> => {
+  const post = await prisma.post.findUnique({
+    where: { slug },
+    include: {
+      tags: true,
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
+  });
+  
+  if (!post) {
+    return undefined;
+  }
+  
+  return convertPrismaPostToPost(post);
+});
+
+// Convert markdown content to HTML
 export async function getPostContentHtml(content: string): Promise<string> {
   // Convert markdown to HTML
   const processedContent = await remark()
@@ -96,57 +95,144 @@ export async function getPostContentHtml(content: string): Promise<string> {
   return processedContent.toString();
 }
 
-export async function getAllPosts(): Promise<Post[]> {
-  // Get all timestamp directories
-  const timestampDirs = fs.readdirSync(postsDirectory);
+// Get all posts with pagination and sorting
+export const getAllPosts = cache(async ({
+  page = 1,
+  limit = 10,
+  orderBy = 'createdAt',
+  orderDirection = 'desc',
+  tag = null,
+  search = null,
+}: {
+  page?: number;
+  limit?: number;
+  orderBy?: 'createdAt' | 'publishedAt' | 'title';
+  orderDirection?: 'asc' | 'desc';
+  tag?: string | null;
+  search?: string | null;
+} = {}): Promise<{ posts: Post[]; total: number; totalPages: number }> => {
+  // Build the where clause
+  const where: any = { published: true };
   
-  // Get all posts from each timestamp directory
-  const posts = timestampDirs.flatMap(timestamp => {
-    const timestampPath = path.join(postsDirectory, timestamp);
-    
-    // Skip if not a directory
-    if (!fs.statSync(timestampPath).isDirectory()) {
-      return [];
-    }
-    
-    // Get all markdown files in the timestamp directory
-    return fs.readdirSync(timestampPath)
-      .filter(file => file.endsWith('.md'))
-      .map(file => {
-        const slug = file.replace(/\.md$/, '');
-        const fullPath = path.join(timestampPath, file);
-        
-        // Read markdown file
-        const fileContents = fs.readFileSync(fullPath, 'utf8');
-        
-        // Parse markdown with gray-matter
-        const { data, content } = matter(fileContents);
-        
-        // Ensure tags are in the correct format
-        const tags = typeof data.tags === 'string'
-          ? data.tags.split(',')
-          : Array.isArray(data.tags) ? data.tags : [];
-        
-        return {
-          slug,
-          title: data.title || '',
-          excerpt: data.excerpt || '',
-          content,
-          date: timestamp, // Use the timestamp directory name as the date
-          coverImage: data.coverImage || '',
-          tags
-        };
-      });
+  // Filter by tag if provided
+  if (tag) {
+    where.tags = {
+      some: {
+        name: tag,
+      },
+    };
+  }
+
+  // Search in title or content if provided
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { content: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  // Get total count for pagination
+  const total = await prisma.post.count({ where });
+  const totalPages = Math.ceil(total / limit);
+
+  // Get posts with pagination and sorting
+  const posts = await prisma.post.findMany({
+    where,
+    include: {
+      tags: true,
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
+    orderBy: {
+      [orderBy]: orderDirection,
+    },
+    skip: (page - 1) * limit,
+    take: limit,
   });
   
-  // Sort posts by date (newest first)
-  return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-}
+  return {
+    posts: posts.map(convertPrismaPostToPost),
+    total,
+    totalPages,
+  };
+});
 
-export async function getRecentPosts(count: number = 3): Promise<Post[]> {
-  return (await getAllPosts()).slice(0, count);
-}
+// Get recent posts
+export const getRecentPosts = cache(async (count: number = 3): Promise<Post[]> => {
+  const posts = await prisma.post.findMany({
+    where: { published: true },
+    include: {
+      tags: true,
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: count,
+  });
 
-export async function getPostsByTag(tag: string): Promise<Post[]> {
-  return (await getAllPosts()).filter(post => post.tags.includes(tag));
-}
+  return posts.map(convertPrismaPostToPost);
+});
+
+// Get posts by tag
+export const getPostsByTag = cache(async (tag: string): Promise<Post[]> => {
+  const posts = await prisma.post.findMany({
+    where: {
+      published: true,
+      tags: {
+        some: {
+          name: tag,
+        },
+      },
+    },
+    include: {
+      tags: true,
+      author: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return posts.map(convertPrismaPostToPost);
+});
+
+// Get all tags with post count
+export const getAllTags = cache(async (): Promise<{ name: string; count: number }[]> => {
+  const tags = await prisma.tag.findMany({
+    include: {
+      _count: {
+        select: {
+          posts: {
+            where: { published: true },
+          },
+        },
+      },
+    },
+  });
+
+  return tags
+    .map(tag => ({
+      name: tag.name,
+      count: tag._count.posts,
+    }))
+    .filter(tag => tag.count > 0)
+    .sort((a, b) => b.count - a.count);
+});

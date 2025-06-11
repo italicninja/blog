@@ -4,6 +4,16 @@ import { isAuthorizedPoster, hasPermission } from '@/lib/authorized-posters';
 import prisma from '@/lib/prisma';
 import slugify from 'slugify';
 import { authOptions } from '@/lib/auth-options';
+import { z } from 'zod';
+
+// Validation schema for post creation
+const PostSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(100, 'Title must be less than 100 characters'),
+  content: z.string().min(1, 'Content is required'),
+  excerpt: z.string().max(300, 'Excerpt must be less than 300 characters').optional(),
+  coverImage: z.string().url('Cover image must be a valid URL').optional().or(z.literal('')),
+  tags: z.array(z.string().max(30, 'Tags must be less than 30 characters')).max(10, 'Maximum of 10 tags allowed'),
+});
 
 // Helper function to generate a unique slug
 async function generateUniqueSlug(title: string): Promise<string> {
@@ -72,114 +82,92 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Parse the request body
+    // Parse and validate the request body
     const body = await request.json();
     
-    // Validate required fields
-    const { title, content, excerpt, coverImage, tags } = body;
-    
-    if (!title || !content) {
+    // Validate with Zod schema
+    const validationResult = PostSchema.safeParse(body);
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map((err: any) =>
+        `${err.path.join('.')}: ${err.message}`
+      ).join(', ');
+
       return NextResponse.json(
-        { error: 'Title and content are required' },
+        { error: `Validation failed: ${errorMessages}` },
         { status: 400 }
       );
     }
     
+    const { title, content, excerpt, coverImage, tags } = validationResult.data;
+
     // Generate a unique slug for the post
     const slug = await generateUniqueSlug(title);
     
-    // Find the user record using a raw query to bypass TypeScript errors
-    const users = await prisma.$queryRaw<any[]>`
-      SELECT * FROM "User" WHERE "githubLogin" = ${githubLogin} OR "name" = ${githubLogin} LIMIT 1
-    `;
-    
-    let user: any = users.length > 0 ? users[0] : null;
+    // Find or create the user
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { githubLogin },
+          { name: githubLogin }
+        ]
+      }
+    });
 
     // If user doesn't exist, create a new one
     if (!user) {
-      const newUsers = await prisma.$queryRaw<any[]>`
-        INSERT INTO "User" ("id", "name", "githubLogin", "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), ${githubLogin}, ${githubLogin}, NOW(), NOW())
-        RETURNING *
-      `;
+      user = await prisma.user.create({
+        data: {
+          name: githubLogin,
+          githubLogin,
+        }
+      });
+    }
 
-      user = newUsers.length > 0 ? newUsers[0] : null;
+    // Process tags - find or create them
+    const tagObjects = [];
+    for (const tagName of tags) {
+      const trimmedName = tagName.trim();
+      if (!trimmedName) continue;
 
-      if (!user) {
-        return NextResponse.json(
-          { error: 'Failed to create user' },
-          { status: 500 }
-        );
-      }
+      const tag = await prisma.tag.upsert({
+        where: { name: trimmedName },
+        update: {},
+        create: { name: trimmedName }
+      });
+
+      tagObjects.push(tag);
     }
     
-    // Process tags
-    const processedTags: any[] = [];
-    if (tags && Array.isArray(tags) && tags.length > 0) {
-      for (const tagName of tags) {
-        const trimmedName = tagName.trim();
-        // Find or create the tag using raw queries
-        const existingTags = await prisma.$queryRaw<any[]>`
-          SELECT * FROM "Tag" WHERE "name" = ${trimmedName} LIMIT 1
-        `;
-        
-        let tag: any;
-        if (existingTags.length === 0) {
-          const newTags = await prisma.$queryRaw<any[]>`
-            INSERT INTO "Tag" ("id", "name")
-            VALUES (gen_random_uuid(), ${trimmedName})
-            RETURNING *
-          `;
-          tag = newTags.length > 0 ? newTags[0] : null;
-        } else {
-          tag = existingTags[0];
+    // Create the post with proper relations
+    const post = await prisma.post.create({
+      data: {
+        title,
+        slug,
+        content,
+        excerpt: excerpt || null,
+        coverImage: coverImage || null,
+        published: true,
+        publishedAt: new Date(),
+        author: {
+          connect: { id: user.id }
+        },
+        tags: {
+          connect: tagObjects.map(tag => ({ id: tag.id }))
         }
-
-        if (tag) {
-          processedTags.push(tag);
-        }
-      }
-    }
-    
-    // Create the post using raw query
-    const newPosts = await prisma.$queryRaw<any[]>`
-      INSERT INTO "Post" (
-        "id", "title", "slug", "content", "excerpt", "coverImage",
-        "published", "createdAt", "updatedAt", "publishedAt", "authorId"
-      ) VALUES (
-        gen_random_uuid(), ${title}, ${slug}, ${content}, ${excerpt || ''}, ${coverImage || ''},
-        true, NOW(), NOW(), NOW(), ${user.id}
-      )
-      RETURNING *
-    `;
-
-    const post = newPosts.length > 0 ? newPosts[0] : null;
-
-    if (!post) {
-      return NextResponse.json(
-        { error: 'Failed to create post' },
-        { status: 500 }
-      );
-    }
-
-    // Connect tags to post
-    for (const tag of processedTags) {
-      await prisma.$executeRaw`
-        INSERT INTO "_PostToTag" ("A", "B")
-        VALUES (${post.id}, ${tag.id})
-      `;
-    }
-
-    // Fetch the complete post with relations
-    const completePost = await prisma.post.findUnique({
-      where: { id: post.id },
-      include: {
-        author: true,
-        tags: true,
       },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          }
+        },
+        tags: true
+      }
     });
     
-    return NextResponse.json(completePost, { status: 201 });
+    return NextResponse.json(post, { status: 201 });
   } catch (error) {
     console.error('Error creating post:', error);
     return NextResponse.json(
@@ -195,11 +183,57 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const published = searchParams.get('published');
     const tag = searchParams.get('tag');
+    const search = searchParams.get('search');
+    const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const orderBy = searchParams.get('orderBy') || 'createdAt';
+    const orderDirection = searchParams.get('orderDirection') || 'desc';
     
-    // Build the query
-    const query: any = {
-      where: {},
+    // Validate and sanitize parameters
+    const validOrderByFields = ['createdAt', 'publishedAt', 'title'];
+    const validOrderDirections = ['asc', 'desc'];
+
+    const sanitizedOrderBy = validOrderByFields.includes(orderBy) ? orderBy : 'createdAt';
+    const sanitizedOrderDirection = validOrderDirections.includes(orderDirection as any) ? orderDirection as 'asc' | 'desc' : 'desc';
+
+    // Build the where clause
+    const where: any = {};
+
+    // Filter by published status
+    if (published === 'true') {
+      where.published = true;
+    } else if (published === 'false') {
+      where.published = false;
+    }
+
+    // Filter by tag
+    if (tag) {
+      where.tags = {
+        some: {
+          name: tag,
+        },
+      };
+    }
+
+    // Filter by search term
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+        { excerpt: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination
+    const total = await prisma.post.count({ where });
+    const totalPages = Math.ceil(total / limit);
+
+    // Get the posts with pagination and sorting
+    const posts = await prisma.post.findMany({
+      where,
       include: {
         author: {
           select: {
@@ -211,35 +245,206 @@ export async function GET(request: NextRequest) {
         tags: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        [sanitizedOrderBy]: sanitizedOrderDirection,
       },
+      skip,
       take: limit,
-    };
+    });
     
-    // Filter by published status
-    if (published === 'true') {
-      query.where.published = true;
-    } else if (published === 'false') {
-      query.where.published = false;
-    }
-    
-    // Filter by tag
-    if (tag) {
-      query.where.tags = {
-        some: {
-          name: tag,
-        },
-      };
-    }
-    
-    // Get the posts
-    const posts = await prisma.post.findMany(query);
-    
-    return NextResponse.json(posts);
+    // Return posts with pagination metadata
+    return NextResponse.json({
+      posts,
+      pagination: {
+        total,
+        totalPages,
+        currentPage: page,
+        limit,
+      }
+    });
   } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json(
       { error: 'An error occurred while fetching posts' },
+      { status: 500 }
+    );
+  }
+}
+
+// Add a DELETE endpoint to delete posts
+export async function DELETE(request: NextRequest) {
+  try {
+    // Get the current session
+    const session = await getServerSession(authOptions);
+
+    // Check if the user is authenticated
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
+    // Get the GitHub login from the session
+    const githubLogin = session.user.githubLogin || session.user.name || '';
+
+    // Special case for italicninja - always authorized
+    if (githubLogin !== 'italicninja') {
+      // Check if the user has delete permission
+      try {
+        const canDelete = await hasPermission(githubLogin, 'delete');
+        if (!canDelete) {
+          return NextResponse.json(
+            { error: 'You do not have permission to delete posts' },
+            { status: 403 }
+          );
+        }
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Error checking delete permission' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Get the post ID from the request
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Post ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Delete the post
+    await prisma.post.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    return NextResponse.json(
+      { error: 'An error occurred while deleting the post' },
+      { status: 500 }
+    );
+  }
+}
+
+// Add a PATCH endpoint to update posts
+export async function PATCH(request: NextRequest) {
+  try {
+    // Get the current session
+    const session = await getServerSession(authOptions);
+
+    // Check if the user is authenticated
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Get the GitHub login from the session
+    const githubLogin = session.user.githubLogin || session.user.name || '';
+
+    // Parse the request body
+    const body = await request.json();
+    const { id, ...updateData } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Post ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get the post to check ownership
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: { author: true },
+    });
+
+    if (!post) {
+      return NextResponse.json(
+        { error: 'Post not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if the user is the author or has edit permission
+    const isAuthor = post.author.githubLogin === githubLogin || post.author.name === githubLogin;
+
+    if (!isAuthor && githubLogin !== 'italicninja') {
+      try {
+        const canEdit = await hasPermission(githubLogin, 'edit');
+        if (!canEdit) {
+          return NextResponse.json(
+            { error: 'You do not have permission to edit this post' },
+            { status: 403 }
+          );
+        }
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Error checking edit permission' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Process tags if provided
+    let tagConnections;
+    if (updateData.tags && Array.isArray(updateData.tags)) {
+      const tagObjects = [];
+      for (const tagName of updateData.tags) {
+        const trimmedName = tagName.trim();
+        if (!trimmedName) continue;
+
+        const tag = await prisma.tag.upsert({
+          where: { name: trimmedName },
+          update: {},
+          create: { name: trimmedName }
+        });
+
+        tagObjects.push(tag);
+      }
+
+      // Set up tag connections
+      tagConnections = {
+        set: [], // Clear existing connections
+        connect: tagObjects.map(tag => ({ id: tag.id }))
+      };
+
+      // Remove tags from updateData as we'll handle them separately
+      delete updateData.tags;
+    }
+    
+    // Update the post
+    const updatedPost = await prisma.post.update({
+      where: { id },
+      data: {
+        ...updateData,
+        ...(tagConnections ? { tags: tagConnections } : {}),
+        updatedAt: new Date(),
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          }
+        },
+        tags: true
+      }
+    });
+    
+    return NextResponse.json(updatedPost);
+  } catch (error) {
+    console.error('Error updating post:', error);
+    return NextResponse.json(
+      { error: 'An error occurred while updating the post' },
       { status: 500 }
     );
   }
