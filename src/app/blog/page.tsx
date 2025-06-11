@@ -23,12 +23,17 @@ interface BlogPageProps {
   };
 }
 
-export default async function BlogPage({ searchParams }: BlogPageProps) {
+export default async function BlogPage({
+  searchParams
+}: {
+  searchParams: Promise<BlogPageProps['searchParams']> | BlogPageProps['searchParams']
+}) {
   // Parse query parameters
-  const currentPage = searchParams.page ? parseInt(searchParams.page, 10) : 1;
-  const tag = searchParams.tag || null;
-  const search = searchParams.search || null;
-  const sort = searchParams.sort || 'newest';
+  const resolvedParams = searchParams instanceof Promise ? await searchParams : searchParams;
+  const currentPage = resolvedParams.page ? parseInt(resolvedParams.page, 10) : 1;
+  const tag = resolvedParams.tag || null;
+  const search = resolvedParams.search || null;
+  const sort = resolvedParams.sort || 'newest';
 
   // Determine sort options
   const sortOptions: Record<string, { orderBy: 'createdAt' | 'publishedAt' | 'title', orderDirection: 'asc' | 'desc' }> = {
