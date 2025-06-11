@@ -3,7 +3,7 @@ import html from 'remark-html';
 import prisma from '@/lib/prisma';
 import { Post as PrismaPost, Tag, User } from '@prisma/client';
 import { cache } from 'react';
-import { getImageUrl } from '@/lib/uploadthing-utils';
+import { getImageUrl, isValidImageData } from '@/lib/uploadthing-utils';
 
 export interface Post {
   id: string;
@@ -88,28 +88,44 @@ export const getPostBySlug = cache(async (slug: string): Promise<Post | undefine
 
 // Convert markdown content to HTML
 export async function getPostContentHtml(content: string): Promise<string> {
-  // Convert markdown to HTML
-  const processedContent = await remark()
-    .use(html)
-    .process(content);
+  try {
+    // Convert markdown to HTML
+    const processedContent = await remark()
+      .use(html)
+      .process(content);
+
+    let htmlContent = processedContent.toString();
     
-  let htmlContent = processedContent.toString();
+    // Process image URLs in the HTML content
+    // This regex matches <img> tags with src attributes
+    const imgRegex = /<img([^>]*)src=["']([^"']*)["']([^>]*)>/g;
 
-  // Process image URLs in the HTML content
-  // This regex matches <img> tags with src attributes
-  const imgRegex = /<img([^>]*)src=["']([^"']*)["']([^>]*)>/g;
+    // Replace image URLs with the proper UploadThing URLs
+    htmlContent = htmlContent.replace(imgRegex, (match, before, src, after) => {
+      try {
+        // Skip processing if src is empty
+        if (!src) return match;
 
-  // Replace image URLs with the proper UploadThing URLs
-  htmlContent = htmlContent.replace(imgRegex, (match, before, src, after) => {
-    // Check if the src is a JSON string (metadata) or needs to be processed
-    if (src.startsWith('{') || src.includes('uploadthing.com')) {
-      const processedSrc = getImageUrl(src);
-      return `<img${before}src="${processedSrc}"${after}>`;
-    }
-    return match; // Return unchanged if not an UploadThing image
-  });
+        // Only process JSON metadata strings
+        if (src.startsWith('{')) {
+          const processedSrc = getImageUrl(src);
+          return `<img${before}src="${processedSrc}"${after}>`;
+        }
 
-  return htmlContent;
+        // Return unchanged for other sources
+        return match;
+      } catch (error) {
+        console.error('Error processing image in HTML content:', error);
+        return match; // Return original on error
+      }
+    });
+
+    return htmlContent;
+  } catch (error) {
+    console.error('Error converting markdown to HTML:', error);
+    // Return the original content as a fallback
+    return `<div>${content}</div>`;
+  }
 }
 
 // Get all posts with pagination and sorting

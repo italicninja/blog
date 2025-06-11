@@ -124,10 +124,17 @@ export default function BlogSubmissionForm() {
     setImageProcessingStatus(`Processing ${localImageRefs.length} images...`);
 
     try {
-      // Convert paths to File objects
-      const imageFiles: (File | null)[] = await Promise.all(
-        localImageRefs.map(img => pathToFile(img.path))
-      );
+      // Convert paths to File objects with error handling for each image
+      const imageFilesPromises = localImageRefs.map(async (img) => {
+        try {
+          return await pathToFile(img.path);
+        } catch (error) {
+          console.error(`Error converting image path to file: ${img.path}`, error);
+          return null;
+        }
+      });
+
+      const imageFiles: (File | null)[] = await Promise.all(imageFilesPromises);
 
       // Filter out null values (failed conversions)
       const validImageFiles = imageFiles.filter((file): file is File => file !== null);
@@ -139,26 +146,38 @@ export default function BlogSubmissionForm() {
 
       setImageProcessingStatus(`Uploading ${validImageFiles.length} images...`);
 
-      // Upload images to UploadThing
-      const uploadResults = await startUpload(validImageFiles);
+      // Upload images to UploadThing with error handling
+      let uploadResults;
+      try {
+        uploadResults = await startUpload(validImageFiles);
 
-      if (!uploadResults || uploadResults.length === 0) {
-        throw new Error("Failed to upload images");
+        if (!uploadResults || uploadResults.length === 0) {
+          console.warn("Upload completed but no results returned");
+          return { processedContent: content };
+        }
+      } catch (uploadError) {
+        console.error("Error uploading images:", uploadError);
+        setError(`Upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+        return { processedContent: content };
       }
 
-      // Create a map of original paths to new URLs
+      // Create a map of original paths to metadata JSON strings
       const replacements = new Map<string, string>();
-      const imageMetadataMap = new Map<string, string>();
 
       localImageRefs.forEach((img, index) => {
         if (index < uploadResults.length) {
-          const url = uploadResults[index].url;
-          replacements.set(img.path, url);
+          try {
+            const url = uploadResults[index].url;
 
-          // Also store metadata for each image
-          const metadata = imageUrlToMetadata(url, img.alt);
-          if (metadata) {
-            imageMetadataMap.set(url, metadata);
+            // Create metadata for the image
+            const metadata = imageUrlToMetadata(url, img.alt);
+            if (metadata) {
+              // Store the metadata JSON string directly in the content
+              replacements.set(img.path, metadata);
+            }
+          } catch (error) {
+            console.error(`Error processing uploaded image at index ${index}:`, error);
+            // Skip this image if there's an error
           }
         }
       });
@@ -217,8 +236,16 @@ export default function BlogSubmissionForm() {
         setFormData(prev => ({ ...prev, coverImage: firstImageUrl }));
       }
 
-      // Convert cover image URL to metadata for storage
-      const coverImageMetadata = coverImage ? imageUrlToMetadata(coverImage, "Cover image for post") : null;
+      // Convert cover image URL to metadata for storage with error handling
+      let coverImageMetadata = null;
+      if (coverImage) {
+        try {
+          coverImageMetadata = imageUrlToMetadata(coverImage, "Cover image for post");
+        } catch (error) {
+          console.error("Error converting cover image to metadata:", error);
+          // Fall back to using the original URL
+        }
+      }
 
       // Prepare data for submission
       const submissionData = {

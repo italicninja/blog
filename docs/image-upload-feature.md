@@ -8,9 +8,9 @@ When a user submits a blog post, the system automatically:
 
 1. Detects any local images referenced in the markdown content
 2. Uploads these images to UploadThing
-3. Updates the image references in the content with the proper UploadThing URLs
+3. Stores image metadata as JSON in the content
 4. Sets the first uploaded image as the cover image if none was provided
-5. Stores image metadata in the database instead of direct URLs
+5. Stores all images as metadata objects in the database
 6. Submits the post with the updated content
 
 ## How It Works
@@ -51,11 +51,12 @@ This ensures that every post has an attractive visual element without requiring 
 
 ### Image Metadata Storage
 
-Instead of storing direct URLs in the database:
+All images are stored as JSON metadata objects:
 1. The system extracts the file key from UploadThing URLs
-2. Stores the file key and additional metadata as a JSON object in the database
-3. When displaying images, the system reconstructs the URL from the stored metadata
-4. This approach provides more flexibility and control over image handling
+2. Creates a JSON object with the file key and additional metadata
+3. Stores this JSON string directly in the content and database
+4. When displaying images, the system reconstructs the URL from the stored metadata
+5. This approach provides more flexibility and control over image handling
 
 ## Technical Implementation
 
@@ -73,13 +74,31 @@ The feature is implemented using the following components:
 - The maximum file size for each image is 4MB
 - Only images referenced in markdown syntax are detected and processed
 
-## Fallback Behavior
+## Metadata Format
 
-If no images are found in the content or if image processing fails:
-- The system will maintain any manually uploaded cover image
-- If no cover image was provided and no content images are available, the post will be created without a cover image
-- The system will still create the post successfully, just without the automatic image handling
-- A default fallback image is displayed if an image URL cannot be constructed from the stored metadata
+The image metadata is stored as a JSON string with the following structure:
+
+```json
+{
+  "fileKey": "unique-uploadthing-file-key",
+  "alt": "Optional alt text for the image",
+  "createdAt": "2025-06-11T19:45:00.000Z"
+}
+```
+
+Additional fields may include:
+- `width`: Image width in pixels
+- `height`: Image height in pixels
+- `blurDataURL`: Base64 encoded blur placeholder
+
+## Error Handling
+
+The implementation includes focused error handling:
+1. **Image Processing Errors**: Each image is processed independently, so a failure with one image won't affect others
+2. **JSON Parsing Errors**: The system validates JSON metadata before using it
+3. **Missing Images**: The UI displays a placeholder when images can't be loaded
+4. **Upload Failures**: Detailed error messages are provided when uploads fail
+5. **Content Rendering**: Error handling prevents rendering failures
 
 ## Caching Strategy
 
@@ -88,3 +107,12 @@ To optimize performance:
 2. Cache entries expire after 1 hour to ensure fresh data
 3. The cache is used for both cover images and content images
 4. This reduces database load and improves page load times
+
+## Database Migration
+
+When migrating existing posts:
+1. All image URLs should be converted to metadata format
+2. This includes both cover images and images in the content
+3. The migration should extract file keys from existing URLs
+4. JSON metadata objects should be created for each image
+5. The content should be updated to use the new metadata format

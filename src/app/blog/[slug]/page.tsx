@@ -10,6 +10,31 @@ import PostContent from "./post-content";
 import { Suspense } from "react";
 import { getImageUrl, isValidImageData } from "@/lib/uploadthing-utils";
 
+// Fallback image component for error cases
+function FallbackImage({ title }: { title: string }) {
+  return (
+    <div className="bg-gray-200 dark:bg-gray-700 w-full h-full flex items-center justify-center">
+      <span className="text-gray-500 dark:text-gray-400 text-lg">{title}</span>
+    </div>
+  );
+}
+
+// Safe image component with error handling
+function SafeImage({ src, alt, ...props }: { src: string; alt: string; [key: string]: any }) {
+  if (!src) {
+    return <FallbackImage title={alt} />;
+  }
+
+  try {
+    // Only process JSON metadata strings
+    const processedSrc = src.startsWith('{') ? getImageUrl(src) : src;
+    return <Image src={processedSrc} alt={alt} {...props} />;
+  } catch (error) {
+    console.error("Error rendering image:", error);
+    return <FallbackImage title={alt} />;
+  }
+}
+
 // Define a custom type that satisfies both the Promise interface and has the slug property
 type ParamsWithPromise = Promise<{ slug: string }> & { slug: string };
 
@@ -127,10 +152,10 @@ export default async function BlogPostPage(
                   </Link>
                 ))}
               </div>
-              {post.coverImage && isValidImageData(post.coverImage) && (
+              {post.coverImage && (
                 <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden mb-12">
-                  <Image
-                    src={getImageUrl(post.coverImage)}
+                  <SafeImage
+                    src={post.coverImage}
                     alt={post.title}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
@@ -205,19 +230,13 @@ export default async function BlogPostPage(
                 {relatedPosts.map((relatedPost) => (
                   <article key={relatedPost.slug} className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-200 hover:shadow-medium">
                     <div className="relative aspect-[16/9] w-full overflow-hidden">
-                      {relatedPost.coverImage && isValidImageData(relatedPost.coverImage) ? (
-                        <Image
-                          src={getImageUrl(relatedPost.coverImage)}
-                          alt={relatedPost.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <span className="text-gray-400 dark:text-gray-500 text-lg">No image</span>
-                        </div>
-                      )}
+                      <SafeImage
+                        src={relatedPost.coverImage || ''}
+                        alt={relatedPost.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
                     </div>
                     <div className="flex flex-col flex-grow p-6">
                       <div className="mb-3">

@@ -1,5 +1,5 @@
 /**
- * Utilities for handling UploadThing image URLs and file keys
+ * Utilities for handling UploadThing image metadata
  */
 
 import { getCachedImageUrl, cacheImageUrl } from './image-cache';
@@ -8,7 +8,13 @@ import { getCachedImageUrl, cacheImageUrl } from './image-cache';
 const UPLOADTHING_BASE_URL = 'https://uploadthing.com/f';
 
 // Default fallback image path
-const DEFAULT_FALLBACK_IMAGE = '/images/fallback-image.jpg';
+const DEFAULT_FALLBACK_IMAGE = '/images/posts/nextjs.jpg';
+
+/**
+ * Regular expression to match UploadThing URLs
+ * Captures the file key from the URL
+ */
+const UPLOADTHING_URL_REGEX = /https:\/\/uploadthing\.com\/f\/([^?#]+)/i;
 
 /**
  * Interface for the image metadata stored in the database
@@ -19,6 +25,7 @@ export interface ImageMetadata {
   width?: number;
   height?: number;
   blurDataURL?: string;
+  createdAt?: string;
 }
 
 /**
@@ -30,18 +37,9 @@ export function extractFileKeyFromUrl(url: string): string | null {
   if (!url) return null;
   
   try {
-    // Check if it's already a file key (no URL structure)
-    if (!url.includes('/')) {
-      return url;
-    }
-    
-    // Parse the URL
-    const urlObj = new URL(url);
-    
-    // Check if it's an UploadThing URL
-    if (urlObj.hostname === 'uploadthing.com' && urlObj.pathname.startsWith('/f/')) {
-      // Extract the file key from the pathname
-      return urlObj.pathname.substring(3); // Remove '/f/' prefix
+    const match = url.match(UPLOADTHING_URL_REGEX);
+    if (match && match[1]) {
+      return match[1];
     }
     
     return null;
@@ -55,7 +53,7 @@ export function extractFileKeyFromUrl(url: string): string | null {
  * Convert an image URL to a metadata object for storage
  * @param url The image URL
  * @param alt Optional alt text for the image
- * @returns The metadata object or null if the URL is not valid
+ * @returns The metadata JSON string or null if the URL is not valid
  */
 export function imageUrlToMetadata(url: string, alt?: string): string | null {
   if (!url) return null;
@@ -66,6 +64,7 @@ export function imageUrlToMetadata(url: string, alt?: string): string | null {
   const metadata: ImageMetadata = {
     fileKey,
     alt: alt || '',
+    createdAt: new Date().toISOString()
   };
   
   return JSON.stringify(metadata);
@@ -73,37 +72,30 @@ export function imageUrlToMetadata(url: string, alt?: string): string | null {
 
 /**
  * Get the full URL for an UploadThing file key
- * @param fileKey The file key or metadata string
+ * @param metadataStr The metadata JSON string
  * @returns The full URL or a fallback image URL if the key is invalid
  */
-export function getImageUrl(fileKey: string | null): string {
-  if (!fileKey) return DEFAULT_FALLBACK_IMAGE;
+export function getImageUrl(metadataStr: string | null): string {
+  if (!metadataStr) return DEFAULT_FALLBACK_IMAGE;
   
   // Check cache first
-  const cachedUrl = getCachedImageUrl(fileKey);
+  const cachedUrl = getCachedImageUrl(metadataStr);
   if (cachedUrl) {
     return cachedUrl;
   }
 
   try {
-    let url: string;
+    // Parse the metadata JSON
+    const metadata = JSON.parse(metadataStr) as ImageMetadata;
 
-    // Check if it's a JSON metadata string
-    if (fileKey.startsWith('{')) {
-      const metadata = JSON.parse(fileKey) as ImageMetadata;
-      url = `${UPLOADTHING_BASE_URL}/${metadata.fileKey}`;
-    }
-    // Check if it's already a full URL
-    else if (fileKey.startsWith('http')) {
-      url = fileKey;
-    }
-    // Assume it's just a file key
-    else {
-      url = `${UPLOADTHING_BASE_URL}/${fileKey}`;
+    if (!metadata.fileKey) {
+      return DEFAULT_FALLBACK_IMAGE;
     }
     
+    const url = `${UPLOADTHING_BASE_URL}/${metadata.fileKey}`;
+
     // Cache the URL for future use
-    cacheImageUrl(fileKey, url);
+    cacheImageUrl(metadataStr, url);
 
     return url;
   } catch (error) {
@@ -121,14 +113,7 @@ export function parseImageMetadata(metadataStr: string | null): ImageMetadata | 
   if (!metadataStr) return null;
   
   try {
-    // If it's a JSON string, parse it
-    if (metadataStr.startsWith('{')) {
-      return JSON.parse(metadataStr) as ImageMetadata;
-    }
-    
-    // If it's a URL or file key, convert it to metadata
-    const fileKey = extractFileKeyFromUrl(metadataStr) || metadataStr;
-    return { fileKey };
+    return JSON.parse(metadataStr) as ImageMetadata;
   } catch (error) {
     console.error('Error parsing image metadata:', error);
     return null;
@@ -136,28 +121,18 @@ export function parseImageMetadata(metadataStr: string | null): ImageMetadata | 
 }
 
 /**
- * Check if a string is a valid image metadata or URL
+ * Check if a string is valid image metadata
  * @param value The string to check
- * @returns True if the string is valid image metadata or URL
+ * @returns True if the string is valid image metadata
  */
 export function isValidImageData(value: string | null): boolean {
   if (!value) return false;
   
-  // Check if it's a URL
-  if (value.startsWith('http')) {
-    return true;
-  }
-  
   // Check if it's a JSON metadata string
-  if (value.startsWith('{')) {
-    try {
-      const metadata = JSON.parse(value) as ImageMetadata;
-      return !!metadata.fileKey;
-    } catch {
-      return false;
-    }
+  try {
+    const metadata = JSON.parse(value) as ImageMetadata;
+    return !!metadata.fileKey;
+  } catch {
+    return false;
   }
-  
-  // Assume it's a file key
-  return value.length > 0;
 }
