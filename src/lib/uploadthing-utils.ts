@@ -85,10 +85,22 @@ export function getImageUrl(metadataStr: string | null): string {
   }
 
   try {
+    // Handle local file paths (which no longer exist)
+    if (metadataStr.startsWith('/')) {
+      console.warn('Local file path detected, using fallback image:', metadataStr);
+      return DEFAULT_FALLBACK_IMAGE;
+    }
+
+    // Handle direct URLs
+    if (metadataStr.startsWith('http')) {
+      return metadataStr;
+    }
+
     // Parse the metadata JSON
     const metadata = JSON.parse(metadataStr) as ImageMetadata;
 
     if (!metadata.fileKey) {
+      console.warn('Invalid metadata, no fileKey found:', metadataStr);
       return DEFAULT_FALLBACK_IMAGE;
     }
     
@@ -99,7 +111,7 @@ export function getImageUrl(metadataStr: string | null): string {
 
     return url;
   } catch (error) {
-    console.error('Error parsing image metadata:', error);
+    console.error('Error parsing image metadata:', error, 'Input:', metadataStr);
     return DEFAULT_FALLBACK_IMAGE;
   }
 }

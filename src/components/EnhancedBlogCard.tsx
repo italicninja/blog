@@ -24,7 +24,13 @@ export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps)
       <div className="relative aspect-[16/9] w-full overflow-hidden">
         {post.coverImage ? (
           <Image
-            src={post.coverImage.startsWith('{') ? getImageUrl(post.coverImage) : post.coverImage}
+            src={
+              post.coverImage.startsWith('{')
+                ? getImageUrl(post.coverImage)
+                : post.coverImage.startsWith('/')
+                  ? '/images/posts/nextjs.jpg' // Fallback for local paths that no longer exist
+                  : post.coverImage
+            }
             alt={post.title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"

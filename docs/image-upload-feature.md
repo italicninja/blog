@@ -127,12 +127,42 @@ The system handles image rendering consistently across all blog interfaces:
 1. **Blog List Page**:
    - The `EnhancedBlogCard` and `BlogCard` components check if the coverImage is in metadata format
    - If it is, they use `getImageUrl()` to construct the proper UploadThing URL
-   - If not, they use the URL directly (for backward compatibility during migration)
+   - If it's a local file path (which no longer exists), they use a fallback image
+   - If it's a direct URL, they use it as is
 
 2. **Blog Post Page**:
-   - The `SafeImage` component handles metadata parsing for cover images
+   - The `SafeImage` component handles different types of image sources
+   - Local file paths are replaced with a fallback image
    - The `getPostContentHtml` function processes image tags in the HTML content
 
 3. **Error Handling**:
    - All image components include fallbacks for missing or invalid images
    - The system gracefully handles cases where image metadata is malformed
+   - Detailed error logging helps identify issues with specific images
+
+4. **Fallback Strategy**:
+   - A default fallback image (`/images/posts/nextjs.jpg`) is used when images can't be loaded
+   - The `ensure-fallback-image.js` script ensures this image is available
+   - Console warnings are logged when fallbacks are used to aid debugging
+
+## Next.js Configuration
+
+To properly display images from external domains, the Next.js configuration has been updated:
+
+1. **Domain Configuration**:
+   - Added UploadThing domains to the allowed image sources
+   - Configured both `next.config.js` and `next.config.ts` files
+   - Included all necessary domains: `uploadthing.com`, `utfs.io`, and `spw57w8h92.ufs.sh`
+
+2. **Remote Patterns**:
+   - Used `remotePatterns` in `next.config.js` for more flexible domain matching
+   - Used `domains` array in `next.config.ts` for TypeScript support
+   - Ensured all external image sources are properly configured
+
+3. **Route Parameter Handling**:
+   - Fixed async parameter handling in dynamic routes
+   - Added proper awaiting of params in the blog post page
+   - Resolved the "params should be awaited before using its properties" error
+   - Implemented a more robust approach to handle both Promise and non-Promise params
+
+This configuration is essential for Next.js to properly optimize and serve images from external domains, while ensuring correct route parameter handling.

@@ -10,6 +10,9 @@ import PostContent from "./post-content";
 import { Suspense } from "react";
 import { getImageUrl, isValidImageData } from "@/lib/uploadthing-utils";
 
+// Default fallback image path
+const DEFAULT_FALLBACK_IMAGE = '/images/posts/nextjs.jpg';
+
 // Fallback image component for error cases
 function FallbackImage({ title }: { title: string }) {
   return (
@@ -26,27 +29,38 @@ function SafeImage({ src, alt, ...props }: { src: string; alt: string; [key: str
   }
 
   try {
-    // Only process JSON metadata strings
-    const processedSrc = src.startsWith('{') ? getImageUrl(src) : src;
+    // Process different types of image sources
+    let processedSrc;
+
+    if (src.startsWith('{')) {
+      // JSON metadata
+      processedSrc = getImageUrl(src);
+    } else if (src.startsWith('/')) {
+      // Local file path (which no longer exists)
+      console.warn('Local file path detected, using fallback image:', src);
+      processedSrc = DEFAULT_FALLBACK_IMAGE;
+    } else {
+      // Direct URL
+      processedSrc = src;
+    }
+
     return <Image src={processedSrc} alt={alt} {...props} />;
   } catch (error) {
-    console.error("Error rendering image:", error);
+    console.error("Error rendering image:", error, "Source:", src);
     return <FallbackImage title={alt} />;
   }
 }
-
-// Define a custom type that satisfies both the Promise interface and has the slug property
-type ParamsWithPromise = Promise<{ slug: string }> & { slug: string };
 
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: { params: ParamsWithPromise }
+  { params }: { params: { slug: string } }
 ): Promise<Metadata> {
-  // Access slug directly, it's available on both Promise and non-Promise
-  const { slug } = params;
+  // Await params if it's a Promise
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const slug = resolvedParams.slug;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -70,10 +84,11 @@ export async function generateMetadata(
 }
 
 export default async function BlogPostPage(
-  { params }: { params: ParamsWithPromise }
+  { params }: { params: { slug: string } }
 ) {
-  // Access slug directly, it's available on both Promise and non-Promise
-  const { slug } = params;
+  // Await params if it's a Promise
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const slug = resolvedParams.slug;
   const post = await getPostBySlug(slug);
 
   if (!post) {

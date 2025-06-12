@@ -10,6 +10,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'utfs.io',
       },
+      {
+        protocol: 'https',
+        hostname: 'uploadthing.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'spw57w8h92.ufs.sh',
+      },
     ],
   },
   eslint: {
