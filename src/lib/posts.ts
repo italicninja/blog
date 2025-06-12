@@ -106,17 +106,29 @@ export async function getPostContentHtml(content: string): Promise<string> {
         // Skip processing if src is empty
         if (!src) return match;
 
-        // Only process JSON metadata strings
+        // Process different types of image sources
+        let processedSrc;
+
         if (src.startsWith('{')) {
-          const processedSrc = getImageUrl(src);
-          return `<img${before}src="${processedSrc}"${after}>`;
+          // JSON metadata string
+          processedSrc = getImageUrl(src);
+        } else if (src.startsWith('/')) {
+          // Local file path (which no longer exists)
+          console.warn('Local file path detected in content, using fallback image:', src);
+          processedSrc = '/images/fallback-image.jpg';
+        } else if (src.includes('uploadthing.com') || src.includes('utfs.io')) {
+          // Direct UploadThing URL - use as is
+          processedSrc = src;
+        } else {
+          // Other URLs - use as is
+          processedSrc = src;
         }
 
-        // Return unchanged for other sources
-        return match;
+        return `<img${before}src="${processedSrc}"${after}>`;
       } catch (error) {
-        console.error('Error processing image in HTML content:', error);
-        return match; // Return original on error
+        console.error('Error processing image in HTML content:', error, 'Source:', src);
+        // Return with fallback image on error
+        return `<img${before}src="/images/fallback-image.jpg"${after}>`;
       }
     });
 

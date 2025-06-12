@@ -33,14 +33,22 @@ function SafeImage({ src, alt, ...props }: { src: string; alt: string; [key: str
     let processedSrc;
 
     if (src.startsWith('{')) {
-      // JSON metadata
-      processedSrc = getImageUrl(src);
+      try {
+        // JSON metadata
+        processedSrc = getImageUrl(src);
+      } catch (metadataError) {
+        console.error("Error processing image metadata:", metadataError, "Source:", src);
+        processedSrc = DEFAULT_FALLBACK_IMAGE;
+      }
     } else if (src.startsWith('/')) {
       // Local file path (which no longer exists)
       console.warn('Local file path detected, using fallback image:', src);
       processedSrc = DEFAULT_FALLBACK_IMAGE;
+    } else if (src.includes('uploadthing.com') || src.includes('utfs.io')) {
+      // Direct UploadThing URL - use as is
+      processedSrc = src;
     } else {
-      // Direct URL
+      // Other URLs - use as is
       processedSrc = src;
     }
 

@@ -97,7 +97,18 @@ export function getImageUrl(metadataStr: string | null): string {
     }
 
     // Parse the metadata JSON
-    const metadata = JSON.parse(metadataStr) as ImageMetadata;
+    let metadata: ImageMetadata;
+    try {
+      metadata = JSON.parse(metadataStr) as ImageMetadata;
+    } catch (parseError) {
+      console.error('Failed to parse image metadata JSON:', parseError, 'Input:', metadataStr);
+      return DEFAULT_FALLBACK_IMAGE;
+    }
+
+    if (!metadata || typeof metadata !== 'object') {
+      console.warn('Invalid metadata format, not an object:', metadataStr);
+      return DEFAULT_FALLBACK_IMAGE;
+    }
 
     if (!metadata.fileKey) {
       console.warn('Invalid metadata, no fileKey found:', metadataStr);
@@ -111,7 +122,7 @@ export function getImageUrl(metadataStr: string | null): string {
 
     return url;
   } catch (error) {
-    console.error('Error parsing image metadata:', error, 'Input:', metadataStr);
+    console.error('Error processing image metadata:', error, 'Input:', metadataStr);
     return DEFAULT_FALLBACK_IMAGE;
   }
 }
