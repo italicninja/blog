@@ -51,16 +51,19 @@ function SafeImage({ src, alt, ...props }: { src: string; alt: string; [key: str
   }
 }
 
+// Define the params type
+type Params = {
+  slug: string;
+};
+
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  { params }: { params: Params }
 ): Promise<Metadata> {
-  // Await params if it's a Promise
-  const resolvedParams = params instanceof Promise ? await params : params;
-  const slug = resolvedParams.slug;
+  const slug = params.slug;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -84,11 +87,9 @@ export async function generateMetadata(
 }
 
 export default async function BlogPostPage(
-  { params }: { params: { slug: string } }
+  { params }: { params: Params }
 ) {
-  // Await params if it's a Promise
-  const resolvedParams = params instanceof Promise ? await params : params;
-  const slug = resolvedParams.slug;
+  const slug = params.slug;
   const post = await getPostBySlug(slug);
 
   if (!post) {

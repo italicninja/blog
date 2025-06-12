@@ -160,9 +160,9 @@ To properly display images from external domains, the Next.js configuration has 
    - Ensured all external image sources are properly configured
 
 3. **Route Parameter Handling**:
-   - Fixed async parameter handling in dynamic routes
-   - Added proper awaiting of params in the blog post page
-   - Resolved the "params should be awaited before using its properties" error
-   - Implemented a more robust approach to handle both Promise and non-Promise params
+   - Fixed type definitions for route parameters
+   - Defined a proper `Params` type for the slug parameter
+   - Resolved the build error related to Promise constraints
+   - Simplified parameter access by removing unnecessary Promise handling
 
 This configuration is essential for Next.js to properly optimize and serve images from external domains, while ensuring correct route parameter handling.
