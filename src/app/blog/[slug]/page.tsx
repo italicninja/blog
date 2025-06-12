@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getPostBySlug, getRecentPosts, getAllPostSlugs, getPostsByTag } from "@/lib/posts";
 import { formatDate } from "@/utils/date";
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import PostContent from "./post-content";
 import { Suspense } from "react";
 import { getImageUrl, isValidImageData } from "@/lib/uploadthing-utils";
@@ -56,12 +56,19 @@ type Params = {
   slug: string;
 };
 
+// Define custom types that satisfy both the Promise interface and have the required properties
+type ParamsWithPromise = Promise<Params> & Params;
+
+type SearchParams = { [key: string]: string | string[] | undefined };
+type SearchParamsWithPromise = Promise<SearchParams> & SearchParams;
+
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: { params: Params }
+  { params }: { params: ParamsWithPromise },
+  parent: ResolvingMetadata
 ): Promise<Metadata> {
   const slug = params.slug;
   const post = await getPostBySlug(slug);
@@ -86,9 +93,12 @@ export async function generateMetadata(
   };
 }
 
-export default async function BlogPostPage(
-  { params }: { params: Params }
-) {
+type PageProps = {
+  params: ParamsWithPromise;
+  searchParams?: SearchParamsWithPromise;
+}
+
+export default async function BlogPostPage({ params, searchParams }: PageProps) {
   const slug = params.slug;
   const post = await getPostBySlug(slug);
 
