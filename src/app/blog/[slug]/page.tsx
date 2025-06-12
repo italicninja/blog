@@ -5,22 +5,80 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getPostBySlug, getRecentPosts, getAllPostSlugs, getPostsByTag } from "@/lib/posts";
 import { formatDate } from "@/utils/date";
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import PostContent from "./post-content";
 import { Suspense } from "react";
+import { getImageUrl, isValidImageData } from "@/lib/uploadthing-utils";
 
-// Define a custom type that satisfies both the Promise interface and has the slug property
-type ParamsWithPromise = Promise<{ slug: string }> & { slug: string };
+// Default fallback image path
+const DEFAULT_FALLBACK_IMAGE = '/images/posts/nextjs.jpg';
+
+// Fallback image component for error cases
+function FallbackImage({ title }: { title: string }) {
+  return (
+    <div className="bg-gray-200 dark:bg-gray-700 w-full h-full flex items-center justify-center">
+      <span className="text-gray-500 dark:text-gray-400 text-lg">{title}</span>
+    </div>
+  );
+}
+
+// Safe image component with error handling
+function SafeImage({ src, alt, ...props }: { src: string; alt: string; [key: string]: any }) {
+  if (!src) {
+    return <FallbackImage title={alt} />;
+  }
+
+  try {
+    // Process different types of image sources
+    let processedSrc;
+
+    if (src.startsWith('{')) {
+      try {
+        // JSON metadata
+        processedSrc = getImageUrl(src);
+      } catch (metadataError) {
+        console.error("Error processing image metadata:", metadataError, "Source:", src);
+        processedSrc = DEFAULT_FALLBACK_IMAGE;
+      }
+    } else if (src.startsWith('/')) {
+      // Local file path (which no longer exists)
+      console.warn('Local file path detected, using fallback image:', src);
+      processedSrc = DEFAULT_FALLBACK_IMAGE;
+    } else if (src.includes('uploadthing.com') || src.includes('utfs.io')) {
+      // Direct UploadThing URL - use as is
+      processedSrc = src;
+    } else {
+      // Other URLs - use as is
+      processedSrc = src;
+    }
+
+    return <Image src={processedSrc} alt={alt} {...props} />;
+  } catch (error) {
+    console.error("Error rendering image:", error, "Source:", src);
+    return <FallbackImage title={alt} />;
+  }
+}
+
+// Define the params type
+type Params = {
+  slug: string;
+};
+
+// Define custom types that satisfy both the Promise interface and have the required properties
+type ParamsWithPromise = Promise<Params> & Params;
+
+type SearchParams = { [key: string]: string | string[] | undefined };
+type SearchParamsWithPromise = Promise<SearchParams> & SearchParams;
 
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: { params: ParamsWithPromise }
+  { params }: { params: ParamsWithPromise },
+  parent: ResolvingMetadata
 ): Promise<Metadata> {
-  // Access slug directly, it's available on both Promise and non-Promise
-  const { slug } = params;
+  const slug = params.slug;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -36,18 +94,20 @@ export async function generateMetadata(
     openGraph: {
       title: post.title,
       description: post.excerpt,
-      images: post.coverImage ? [post.coverImage] : [],
+      images: post.coverImage ? [getImageUrl(post.coverImage)] : [],
       type: 'article',
       publishedTime: post.date,
     },
   };
 }
 
-export default async function BlogPostPage(
-  { params }: { params: ParamsWithPromise }
-) {
-  // Access slug directly, it's available on both Promise and non-Promise
-  const { slug } = params;
+type PageProps = {
+  params: ParamsWithPromise;
+  searchParams?: SearchParamsWithPromise;
+}
+
+export default async function BlogPostPage({ params, searchParams }: PageProps) {
+  const slug = params.slug;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -128,7 +188,7 @@ export default async function BlogPostPage(
               </div>
               {post.coverImage && (
                 <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden mb-12">
-                  <Image
+                  <SafeImage
                     src={post.coverImage}
                     alt={post.title}
                     fill
@@ -204,19 +264,13 @@ export default async function BlogPostPage(
                 {relatedPosts.map((relatedPost) => (
                   <article key={relatedPost.slug} className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-200 hover:shadow-medium">
                     <div className="relative aspect-[16/9] w-full overflow-hidden">
-                      {relatedPost.coverImage ? (
-                        <Image
-                          src={relatedPost.coverImage}
-                          alt={relatedPost.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <span className="text-gray-400 dark:text-gray-500 text-lg">No image</span>
-                        </div>
-                      )}
+                      <SafeImage
+                        src={relatedPost.coverImage || ''}
+                        alt={relatedPost.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
                     </div>
                     <div className="flex flex-col flex-grow p-6">
                       <div className="mb-3">

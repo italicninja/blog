@@ -5,10 +5,40 @@ import Image from 'next/image';
 import { formatDate } from '@/utils/date';
 import { motion } from 'framer-motion';
 import { Post } from '@/lib/posts';
+import { getImageUrl } from '@/lib/uploadthing-utils';
 
 interface EnhancedBlogCardProps {
   post: Post;
   index: number;
+}
+
+/**
+ * Process different types of image sources to get the appropriate URL
+ * @param src The source image path or metadata
+ * @returns The processed image URL
+ */
+function getProcessedImageSrc(src: string): string {
+  if (!src) return '/images/fallback-image.jpg';
+
+  try {
+    if (src.startsWith('{')) {
+      // JSON metadata
+      return getImageUrl(src);
+    } else if (src.startsWith('/')) {
+      // Local file path (which no longer exists)
+      console.warn('Local file path detected, using fallback image:', src);
+      return '/images/fallback-image.jpg';
+    } else if (src.includes('uploadthing.com') || src.includes('utfs.io')) {
+      // Direct UploadThing URL - use as is
+      return src;
+    } else {
+      // Other URLs - use as is
+      return src;
+    }
+  } catch (error) {
+    console.error("Error processing image source:", error, "Source:", src);
+    return '/images/fallback-image.jpg';
+  }
 }
 
 export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps) {
@@ -23,7 +53,7 @@ export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps)
       <div className="relative aspect-[16/9] w-full overflow-hidden">
         {post.coverImage ? (
           <Image
-            src={post.coverImage}
+            src={getProcessedImageSrc(post.coverImage)}
             alt={post.title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"

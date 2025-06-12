@@ -3,6 +3,7 @@ import html from 'remark-html';
 import prisma from '@/lib/prisma';
 import { Post as PrismaPost, Tag, User } from '@prisma/client';
 import { cache } from 'react';
+import { getImageUrl, isValidImageData } from '@/lib/uploadthing-utils';
 
 export interface Post {
   id: string;
@@ -87,12 +88,56 @@ export const getPostBySlug = cache(async (slug: string): Promise<Post | undefine
 
 // Convert markdown content to HTML
 export async function getPostContentHtml(content: string): Promise<string> {
-  // Convert markdown to HTML
-  const processedContent = await remark()
-    .use(html)
-    .process(content);
+  try {
+    // Convert markdown to HTML
+    const processedContent = await remark()
+      .use(html)
+      .process(content);
+
+    let htmlContent = processedContent.toString();
     
-  return processedContent.toString();
+    // Process image URLs in the HTML content
+    // This regex matches <img> tags with src attributes
+    const imgRegex = /<img([^>]*)src=["']([^"']*)["']([^>]*)>/g;
+
+    // Replace image URLs with the proper UploadThing URLs
+    htmlContent = htmlContent.replace(imgRegex, (match, before, src, after) => {
+      try {
+        // Skip processing if src is empty
+        if (!src) return match;
+
+        // Process different types of image sources
+        let processedSrc;
+
+        if (src.startsWith('{')) {
+          // JSON metadata string
+          processedSrc = getImageUrl(src);
+        } else if (src.startsWith('/')) {
+          // Local file path (which no longer exists)
+          console.warn('Local file path detected in content, using fallback image:', src);
+          processedSrc = '/images/fallback-image.jpg';
+        } else if (src.includes('uploadthing.com') || src.includes('utfs.io')) {
+          // Direct UploadThing URL - use as is
+          processedSrc = src;
+        } else {
+          // Other URLs - use as is
+          processedSrc = src;
+        }
+
+        return `<img${before}src="${processedSrc}"${after}>`;
+      } catch (error) {
+        console.error('Error processing image in HTML content:', error, 'Source:', src);
+        // Return with fallback image on error
+        return `<img${before}src="/images/fallback-image.jpg"${after}>`;
+      }
+    });
+
+    return htmlContent;
+  } catch (error) {
+    console.error('Error converting markdown to HTML:', error);
+    // Return the original content as a fallback
+    return `<div>${content}</div>`;
+  }
 }
 
 // Get all posts with pagination and sorting
