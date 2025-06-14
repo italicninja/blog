@@ -4,13 +4,12 @@ A casual blog about DevOps, automation, and teaching robots to do my job, built 
 
 ## Features
 
-- Filesystem-based blog posts organized by date
 - Responsive design with Tailwind CSS
 - Server-side rendering with Next.js
 - Markdown content with frontmatter
-- Dark mode support
+- Dark mode
 - SEO optimized
-- Post creation script for easy content management
+- Post creation form for easy content management
 - Ready for Vercel deployment
 
 ## Authentication
@@ -87,45 +86,6 @@ yarn dev
 ## Adding Blog Posts
 
 The blog posts are stored as markdown files in the `src/posts/` directory, organized in timestamp-based folders (YYYY-MM-DD format).
-
-### Using the Post Creation Script
-
-You can easily create a new blog post using the provided script:
-
-```bash
-npm run new-post
-```
-
-This will prompt you for:
-- Post title
-- Post excerpt
-- Cover image path
-- Tags (comma-separated)
-
-The script will automatically:
-- Create a folder with today's date if it doesn't exist
-- Generate a slug from the title
-- Create a markdown file with the appropriate frontmatter
-
-### Manual Creation
-
-Alternatively, you can manually create a post:
-
-1. Create a new folder in `src/posts/` with a date format (YYYY-MM-DD)
-2. Create a markdown file with the following frontmatter:
-
-```markdown
----
-title: Your Post Title
-excerpt: A brief description of your post
-coverImage: /path/to/image.svg
-tags: Tag1,Tag2,Tag3
----
-
-# Your Post Content
-
-Write your post content here using Markdown.
-```
 
 ## Deploying to Vercel
 
