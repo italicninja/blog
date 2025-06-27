@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, FormEvent, ChangeEvent, useCallback, useEffect } from 'react';
+import { TagSelector } from '@/components/TagSelector';
 
 // Add type definitions for Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -70,7 +71,6 @@ export default function BlogSubmissionForm() {
     coverImage: '',
     tags: [],
   });
-  const [tagInput, setTagInput] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
 
   // Initialize speech recognition
@@ -129,30 +129,6 @@ export default function BlogSubmissionForm() {
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Handle tag input
-  const handleTagInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTagInput(e.target.value);
-  };
-
-  // Add a tag
-  const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()],
-      }));
-      setTagInput('');
-    }
-  };
-
-  // Remove a tag
-  const removeTag = (tagToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
-    }));
   };
 
   // Sanitize content
@@ -544,52 +520,13 @@ export default function BlogSubmissionForm() {
         
         {/* Tags */}
         <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Tags
           </label>
-          <div className="flex items-center">
-            <input
-              type="text"
-              id="tagInput"
-              value={tagInput}
-              onChange={handleTagInputChange}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              placeholder="Add a tag"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addTag();
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={addTag}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-r-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-            >
-              Add
-            </button>
-          </div>
-          
-          {formData.tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {formData.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-indigo-400 hover:text-indigo-600 dark:text-indigo-300 dark:hover:text-indigo-100"
-                  >
-                    &times;
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
+          <TagSelector
+            selectedTags={formData.tags}
+            onTagsChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+          />
         </div>
         
         {/* Content */}
