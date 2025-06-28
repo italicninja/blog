@@ -1,0 +1,42 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    groups:
+      # Group production dependencies together
+      production-dependencies:
+        dependency-type: "production"
+        patterns:
+          - "*"
+      # Group development dependencies together
+      development-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "*"
+    # Include both direct and indirect dependencies
+    versioning-strategy: auto
+    # Configure pull request settings
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: "-"
+    # Configure commit message settings
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Set labels for better organization
+    labels:
+      - "dependencies"
+      - "automerge"
+    # Configure security update settings
+    security-updates:
+      enabled: true
+    # Configure version update settings
+    version-updates:
+      enabled: true
+    # Configure reviewer assignments
+    reviewers:
+      - "owner"
+    # Set target branch for pull requests
+    target-branch: "main"
