@@ -1,4 +1,5 @@
 import GithubProvider from "next-auth/providers/github";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { getBaseUrl } from "@/lib/auth-utils";
 import { JWT } from "next-auth/jwt";
 import { Session, AuthOptions, Account, Profile, User } from "next-auth";
@@ -25,7 +26,24 @@ declare module "next-auth/jwt" {
 // Configure NextAuth options
 export const authOptions: AuthOptions = {
   providers: [
-    GithubProvider({
+    ...(process.env.NODE_ENV === 'development' ? [
+      CredentialsProvider({
+        id: 'dev-bypass',
+        name: 'Development Bypass',
+        credentials: {},
+        async authorize() {
+          // Auto-authenticate with developer credentials
+          return {
+            id: 'dev-user',
+            name: 'Developer',
+            email: 'dev@example.com',
+            image: 'https://github.com/ghost.png',
+            githubLogin: 'developer'
+          };
+        },
+      }),
+    ] : [
+      GithubProvider({
       clientId: process.env.GITHUB_ID || "",
       clientSecret: process.env.GITHUB_SECRET || "",
       profile(profile) {
@@ -37,7 +55,8 @@ export const authOptions: AuthOptions = {
           githubLogin: profile.login,
         };
       },
-    }),
+      }),
+    ]),
   ],
   pages: {
     signIn: "/auth/signin",
@@ -48,7 +67,12 @@ export const authOptions: AuthOptions = {
     async session({ session, token }) {
       // Add the GitHub login to the session
       if (session.user) {
-        session.user.githubLogin = token.githubLogin;
+        // For dev bypass, use the hardcoded githubLogin
+        if (process.env.NODE_ENV === 'development' && token.sub === 'dev-user') {
+          session.user.githubLogin = 'developer';
+        } else {
+          session.user.githubLogin = token.githubLogin;
+        }
       }
       return session;
     },
@@ -59,7 +83,9 @@ export const authOptions: AuthOptions = {
       profile?: Profile & { login?: string };
     }) {
       // Add the GitHub login to the token
-      if (profile && account?.provider === 'github' && profile.login) {
+      if (process.env.NODE_ENV === 'development' && user?.id === 'dev-user') {
+        token.githubLogin = 'developer';
+      } else if (profile && account?.provider === 'github' && profile.login) {
         token.githubLogin = profile.login;
       }
       return token;
