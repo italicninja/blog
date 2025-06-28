@@ -1,6 +1,7 @@
 // This script grants permanent publishing access to a GitHub user
 // Usage: node scripts/grant-permanent-access.js <github-username>
 
+require('dotenv').config({ path: '.env.local' });
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 

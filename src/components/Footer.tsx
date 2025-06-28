@@ -44,7 +44,7 @@ export default function Footer() {
               >
                 <code className="font-mono">{commitInfo.sha.substring(0, 7)}</code>
                 <span className="ml-1">
-                  {formatDate(commitInfo.commit.author.date)}
+                  {formatDate(commitInfo.commit.author.date)} - { process.env.NODE_ENV }
                 </span>
               </a>
             ) : null}
