@@ -31,6 +31,6 @@ updates:
       - "automerge"
     # Configure reviewer assignments
     reviewers:
-      - "owner"
+      - "italicninja"
     # Set target branch for pull requests
     target-branch: "main"
