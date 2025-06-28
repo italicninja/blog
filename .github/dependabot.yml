@@ -29,12 +29,6 @@ updates:
     labels:
       - "dependencies"
       - "automerge"
-    # Configure security update settings
-    security-updates:
-      enabled: true
-    # Configure version update settings
-    version-updates:
-      enabled: true
     # Configure reviewer assignments
     reviewers:
       - "owner"
