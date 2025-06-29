@@ -1,7 +1,7 @@
 import { remark } from 'remark';
 import html from 'remark-html';
 import prisma from '@/lib/prisma';
-import { Post as PrismaPost, Tag, User } from '@prisma/client';
+import { Post as PrismaPost, Tag, User, Prisma } from '@prisma/client';
 import { cache } from 'react';
 import { getImageUrl, isValidImageData } from '@/lib/uploadthing-utils';
 
@@ -51,8 +51,12 @@ function convertPrismaPostToPost(
 
 // Get all post slugs for static generation
 export async function getAllPostSlugs() {
+  const where = {
+    status: 'PUBLISHED',
+  } as unknown as Prisma.PostWhereInput;
+
   const posts = await prisma.post.findMany({
-    where: { published: true },
+    where,
     select: { slug: true },
   });
   
@@ -157,7 +161,9 @@ export const getAllPosts = cache(async ({
   search?: string | null;
 } = {}): Promise<{ posts: Post[]; total: number; totalPages: number }> => {
   // Build the where clause
-  const where: any = { published: true };
+  const where = {
+    status: 'PUBLISHED',
+  } as unknown as Prisma.PostWhereInput;
   
   // Filter by tag if provided
   if (tag) {
@@ -209,8 +215,12 @@ export const getAllPosts = cache(async ({
 
 // Get recent posts
 export const getRecentPosts = cache(async (count: number = 3): Promise<Post[]> => {
+  const where = {
+    status: 'PUBLISHED',
+  } as unknown as Prisma.PostWhereInput;
+
   const posts = await prisma.post.findMany({
-    where: { published: true },
+    where,
     include: {
       tags: true,
       author: {
@@ -232,15 +242,17 @@ export const getRecentPosts = cache(async (count: number = 3): Promise<Post[]> =
 
 // Get posts by tag
 export const getPostsByTag = cache(async (tag: string): Promise<Post[]> => {
-  const posts = await prisma.post.findMany({
-    where: {
-      published: true,
-      tags: {
-        some: {
-          name: tag,
-        },
+  const where = {
+    status: 'PUBLISHED',
+    tags: {
+      some: {
+        name: tag,
       },
     },
+  } as unknown as Prisma.PostWhereInput;
+
+  const posts = await prisma.post.findMany({
+    where,
     include: {
       tags: true,
       author: {
@@ -261,17 +273,25 @@ export const getPostsByTag = cache(async (tag: string): Promise<Post[]> => {
 
 // Get all tags with post count
 export const getAllTags = cache(async (): Promise<{ name: string; count: number }[]> => {
+  type TagWithCount = Tag & {
+    _count: {
+      posts: number;
+    };
+  };
+
   const tags = await prisma.tag.findMany({
     include: {
       _count: {
         select: {
           posts: {
-            where: { published: true },
+            where: {
+              status: 'PUBLISHED',
+            } as unknown as Prisma.PostWhereInput,
           },
         },
       },
     },
-  });
+  }) as TagWithCount[];
 
   return tags
     .map(tag => ({

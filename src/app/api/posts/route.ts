@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { isAuthorizedPoster, hasPermission } from '@/lib/authorized-posters';
 import prisma from '@/lib/prisma';
+import { Prisma, Post } from '@prisma/client';
 import slugify from 'slugify';
 import { authOptions } from '@/lib/auth-options';
 import { z } from 'zod';
+
+type PostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 // Validation schema for post creation
 const PostSchema = z.object({
@@ -139,22 +142,24 @@ export async function POST(request: NextRequest) {
     }
     
     // Create the post with proper relations
-    const post = await prisma.post.create({
-      data: {
-        title,
-        slug,
-        content,
-        excerpt: excerpt || null,
-        coverImage: coverImage || null,
-        published: true,
-        publishedAt: new Date(),
-        author: {
-          connect: { id: user.id }
-        },
-        tags: {
-          connect: tagObjects.map(tag => ({ id: tag.id }))
-        }
+    const postData = {
+      title,
+      slug,
+      content,
+      excerpt: excerpt || null,
+      coverImage: coverImage || null,
+      status: 'PUBLISHED',
+      publishedAt: new Date(),
+      author: {
+        connect: { id: user.id }
       },
+      tags: {
+        connect: tagObjects.map(tag => ({ id: tag.id }))
+      }
+    } as const;
+
+    const createdPost = await prisma.post.create({
+      data: postData,
       include: {
         author: {
           select: {
@@ -166,8 +171,8 @@ export async function POST(request: NextRequest) {
         tags: true
       }
     });
-    
-    return NextResponse.json(post, { status: 201 });
+
+    return NextResponse.json(createdPost, { status: 201 });
   } catch (error) {
     console.error('Error creating post:', error);
     return NextResponse.json(
@@ -197,32 +202,38 @@ export async function GET(request: NextRequest) {
     const sanitizedOrderDirection = validOrderDirections.includes(orderDirection as any) ? orderDirection as 'asc' | 'desc' : 'desc';
 
     // Build the where clause
-    const where: any = {};
+    const whereConditions: Prisma.PostWhereInput[] = [];
 
-    // Filter by published status
+    // Published status filter
     if (published === 'true') {
-      where.published = true;
+      whereConditions.push({ status: 'PUBLISHED' } as Prisma.PostWhereInput);
     } else if (published === 'false') {
-      where.published = false;
+      whereConditions.push({ status: 'DRAFT' } as Prisma.PostWhereInput);
     }
 
-    // Filter by tag
+    // Tag filter
     if (tag) {
-      where.tags = {
-        some: {
-          name: tag,
+      whereConditions.push({
+        tags: {
+          some: {
+            name: tag,
+          },
         },
-      };
+      });
     }
 
-    // Filter by search term
+    // Search filter
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } },
-        { excerpt: { contains: search, mode: 'insensitive' } },
-      ];
+      whereConditions.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { content: { contains: search, mode: 'insensitive' } },
+          { excerpt: { contains: search, mode: 'insensitive' } },
+        ],
+      });
     }
+
+    const where: Prisma.PostWhereInput = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
     // Calculate pagination
     const skip = (page - 1) * limit;

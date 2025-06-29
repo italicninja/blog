@@ -3,11 +3,28 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Enable PostgreSQL full-text search
+  previewFeatures = ["fullTextSearchPostgres"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("POSTGRES_PRISMA_URL")
+  // Enable connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+// Enums for better type safety
+enum PermissionLevel {
+  CONTRIBUTOR
+  EDITOR
+  ADMIN
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
 
 model User {
@@ -53,19 +70,30 @@ model Session {
 }
 
 model Post {
-  id             String    @id @default(cuid())
+  id             String      @id @default(cuid())
   title          String
-  slug           String    @unique
-  content        String    @db.Text
-  excerpt        String?   @db.Text
+  slug           String      @unique
+  content        String      @db.Text
+  excerpt        String?     @db.Text
   coverImage     String?
-  published      Boolean   @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  status         PostStatus  @default(DRAFT)
+  isDeleted      Boolean     @default(false)
+  deletedAt      DateTime?
+  version        Int         @default(1)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
   publishedAt    DateTime?
   authorId       String
-  author         User      @relation(fields: [authorId], references: [id])
-  tags           Tag[]     @relation("PostToTag")
+  author         User        @relation(fields: [authorId], references: [id])
+  tags           Tag[]       @relation("PostToTag")
+  previousVersion String?    // Reference to previous version's id
+  nextVersion    String?     // Reference to next version's id
+
+  @@index([slug])
+  @@index([status, publishedAt])
+  @@index([authorId])
+  @@index([isDeleted, status])
+  @@index([title])
 }
 
 model Tag {
@@ -75,15 +103,20 @@ model Tag {
 }
 
 model AuthorizedPoster {
-  id                String   @id @default(cuid())
-  githubLogin       String   @unique
-  isPermanent       Boolean  @default(false)
-  permissionLevel   String   @default("contributor") // contributor, editor, admin
-  canPublish        Boolean  @default(true)
-  canEdit           Boolean  @default(true)
-  canDelete         Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  lastAuthorizedAt  DateTime @default(now())
-  authorizedBy      String?  // githubLogin of the user who authorized this poster
+  id                String          @id @default(cuid())
+  githubLogin       String          @unique
+  isPermanent       Boolean         @default(false)
+  permissionLevel   PermissionLevel @default(CONTRIBUTOR)
+  canPublish        Boolean         @default(true)
+  canEdit           Boolean         @default(true)
+  canDelete         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  lastAuthorizedAt  DateTime        @default(now())
+  lastLoginAt       DateTime?
+  loginCount        Int             @default(0)
+  authorizedBy      String?         // githubLogin of the user who authorized this poster
+
+  @@index([githubLogin])
+  @@index([permissionLevel])
 }
