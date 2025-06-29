@@ -51,8 +51,12 @@ function convertPrismaPostToPost(
 
 // Get all post slugs for static generation
 export async function getAllPostSlugs() {
+  const where = {
+    status: 'PUBLISHED',
+  } as unknown as Prisma.PostWhereInput;
+
   const posts = await prisma.post.findMany({
-    where: { status: 'PUBLISHED' } as Prisma.PostWhereInput,
+    where,
     select: { slug: true },
   });
   
@@ -157,7 +161,9 @@ export const getAllPosts = cache(async ({
   search?: string | null;
 } = {}): Promise<{ posts: Post[]; total: number; totalPages: number }> => {
   // Build the where clause
-  const where = { status: 'PUBLISHED' } as Prisma.PostWhereInput;
+  const where = {
+    status: 'PUBLISHED',
+  } as unknown as Prisma.PostWhereInput;
   
   // Filter by tag if provided
   if (tag) {
@@ -209,8 +215,12 @@ export const getAllPosts = cache(async ({
 
 // Get recent posts
 export const getRecentPosts = cache(async (count: number = 3): Promise<Post[]> => {
+  const where = {
+    status: 'PUBLISHED',
+  } as unknown as Prisma.PostWhereInput;
+
   const posts = await prisma.post.findMany({
-    where: { status: 'PUBLISHED' } as Prisma.PostWhereInput,
+    where,
     include: {
       tags: true,
       author: {
@@ -232,15 +242,17 @@ export const getRecentPosts = cache(async (count: number = 3): Promise<Post[]> =
 
 // Get posts by tag
 export const getPostsByTag = cache(async (tag: string): Promise<Post[]> => {
-  const posts = await prisma.post.findMany({
-    where: {
-      status: 'PUBLISHED',
-      tags: {
-        some: {
-          name: tag,
-        },
+  const where = {
+    status: 'PUBLISHED',
+    tags: {
+      some: {
+        name: tag,
       },
-    } as Prisma.PostWhereInput,
+    },
+  } as unknown as Prisma.PostWhereInput;
+
+  const posts = await prisma.post.findMany({
+    where,
     include: {
       tags: true,
       author: {
@@ -272,7 +284,9 @@ export const getAllTags = cache(async (): Promise<{ name: string; count: number 
       _count: {
         select: {
           posts: {
-            where: { status: 'PUBLISHED' } as Prisma.PostWhereInput,
+            where: {
+              status: 'PUBLISHED',
+            } as unknown as Prisma.PostWhereInput,
           },
         },
       },
