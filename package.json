@@ -11,7 +11,8 @@
     "add-poster": "node scripts/add-authorized-poster.js",
     "grant-access": "node scripts/grant-permanent-access.js",
     "postinstall": "prisma generate",
-    "backup-database": "node scripts/backup-database.js"
+    "backup-database": "node scripts/backup-database.js",
+    "migrate-production": "node scripts/migrate-production.js"
   },
   "dependencies": {
     "@prisma/client": "^6.10.1",
