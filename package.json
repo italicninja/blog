@@ -10,7 +10,8 @@
     "new-post": "node scripts/create-post.js",
     "add-poster": "node scripts/add-authorized-poster.js",
     "grant-access": "node scripts/grant-permanent-access.js",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "backup-database": "node scripts/backup-database.js"
   },
   "dependencies": {
     "@prisma/client": "^6.10.1",

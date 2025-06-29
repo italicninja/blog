@@ -45,25 +45,39 @@ export class PostRepository extends PrismaRepository<Post, Prisma.PostCreateInpu
     const { page = 1, limit = 10, status, tag, search, authorId, isDeleted, sort } = criteria;
     const skip = (page - 1) * limit;
 
-    const where = {
+    const whereConditions = [];
+
+    // Add status condition
+    whereConditions.push({
       status: status || 'PUBLISHED',
       isDeleted: isDeleted ?? false,
-    } as unknown as Prisma.PostWhereInput;
+    });
 
+    // Add tag condition
     if (tag) {
-      where.tags = { some: { name: tag } };
+      whereConditions.push({
+        tags: { some: { name: tag } }
+      });
     }
 
+    // Add author condition
     if (authorId) {
-      where.authorId = authorId;
+      whereConditions.push({ authorId });
     }
 
+    // Add search condition
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } },
-      ];
+      whereConditions.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { content: { contains: search, mode: 'insensitive' } },
+        ]
+      });
     }
+
+    const where = {
+      AND: whereConditions.filter(Boolean)
+    } as unknown as Prisma.PostWhereInput;
 
     const [posts, total] = await Promise.all([
       this.prisma.post.findMany({
@@ -86,15 +100,13 @@ export class PostRepository extends PrismaRepository<Post, Prisma.PostCreateInpu
   }
 
   async incrementVersion(id: string): Promise<Post> {
-    const versionData = {
-      version: {
-        increment: 1,
-      },
+    const updateData = {
+      version: { increment: 1 }
     } as unknown as Prisma.PostUpdateInput;
 
     return this.prisma.post.update({
       where: { id },
-      data: versionData,
+      data: updateData
     });
   }
 

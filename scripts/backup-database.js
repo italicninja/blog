@@ -27,8 +27,8 @@ async function main() {
     users: await prisma.user.findMany(),
     posts: await prisma.post.findMany({
       include: {
-        tags: true,
-        author: true
+        author: true,
+        tags: true
       }
     }),
     tags: await prisma.tag.findMany(),

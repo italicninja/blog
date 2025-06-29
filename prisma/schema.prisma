@@ -94,7 +94,6 @@ model Post {
   @@index([authorId])
   @@index([isDeleted, status])
   @@index([title])
-  @@index([content(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model Tag {
