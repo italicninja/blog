@@ -29,8 +29,5 @@ updates:
     labels:
       - "dependencies"
       - "automerge"
-    # Configure reviewer assignments
-    reviewers:
-      - "italicninja"
     # Set target branch for pull requests
     target-branch: "main"
