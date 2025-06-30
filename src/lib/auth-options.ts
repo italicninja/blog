@@ -8,6 +8,7 @@ import { Session, AuthOptions, Account, Profile, User } from "next-auth";
 declare module "next-auth" {
   interface Session {
     user?: {
+      id: string;
       name?: string | null;
       email?: string | null;
       image?: string | null;
@@ -65,8 +66,9 @@ export const authOptions: AuthOptions = {
   // Base path is automatically set to /api/auth
   callbacks: {
     async session({ session, token }) {
-      // Add the GitHub login to the session
+      // Add the GitHub login and user id to the session
       if (session.user) {
+        session.user.id = token.sub!;
         // For dev bypass, use the hardcoded githubLogin
         if (process.env.NODE_ENV === 'development' && token.sub === 'dev-user') {
           session.user.githubLogin = 'developer';

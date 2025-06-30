@@ -38,6 +38,7 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   posts         Post[]
+  pinnedProjects PinnedProject[]
   accounts      Account[]
   sessions      Session[]
 }
@@ -100,6 +101,25 @@ model Tag {
   id    String @id @default(cuid())
   name  String @unique
   posts Post[] @relation("PostToTag")
+  pinnedProjects PinnedProject[] @relation("PinnedProjectToTag")
+}
+
+model PinnedProject {
+  id            String    @id @default(cuid())
+  name          String
+  url           String
+  description   String    @db.Text
+  completedAt   DateTime
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags          Tag[]     @relation("PinnedProjectToTag")
+
+  @@index([userId])
+  @@index([completedAt])
+  @@index([sortOrder])
 }
 
 model AuthorizedPoster {
