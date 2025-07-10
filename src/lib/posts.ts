@@ -231,9 +231,10 @@ export const getRecentPosts = cache(async (count: number = 3): Promise<Post[]> =
         },
       },
     },
-    orderBy: {
-      createdAt: 'desc',
-    },
+    orderBy: [
+      { publishedAt: 'desc' },
+      { createdAt: 'desc' } // Fallback for posts without publishedAt
+    ],
     take: count,
   });
 
