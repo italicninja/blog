@@ -43,8 +43,8 @@ function getProcessedImageSrc(src: string): string {
 
 export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps) {
   return (
-    <motion.article 
-      className="card group flex flex-col overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm transition-all duration-300 hover:shadow-lg"
+    <motion.article
+      className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm transition-all duration-300 hover:shadow-lg"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.1 }}
@@ -76,7 +76,7 @@ export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps)
         </div>
         
         <Link href={`/blog/${post.slug}`} className="group-hover:underline decoration-1 underline-offset-2">
-          <h2 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white mb-3 line-clamp-2">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground mb-3 line-clamp-2">
             {post.title}
           </h2>
         </Link>
@@ -100,7 +100,7 @@ export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps)
         <motion.div whileHover={{ x: 3 }}>
           <Link
             href={`/blog/${post.slug}`}
-            className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+            className="inline-flex items-center text-sm font-medium text-indigo hover:text-indigo-light dark:text-indigo dark:hover:text-indigo-light transition-colors"
           >
             Read more
             <svg

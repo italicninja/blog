@@ -80,13 +80,22 @@ export default function Header() {
             italicninja
           </Link>
           <nav className="flex items-center space-x-4">
-            <Link href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-foreground dark:hover:text-foreground transition-colors">
+            <Link
+              href="/"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-foreground dark:hover:text-foreground transition-colors px-2 py-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
               Home
             </Link>
-            <Link href="/blog" className="text-sm text-gray-500 dark:text-gray-400 hover:text-foreground dark:hover:text-foreground transition-colors">
+            <Link
+              href="/blog"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-foreground dark:hover:text-foreground transition-colors px-2 py-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
               Blog
             </Link>
-            <Link href="/about" className="text-sm text-gray-500 dark:text-gray-400 hover:text-foreground dark:hover:text-foreground transition-colors">
+            <Link
+              href="/about"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-foreground dark:hover:text-foreground transition-colors px-2 py-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
               About
             </Link>
             {isSessionLoading ? (
@@ -95,8 +104,10 @@ export default function Header() {
               <div className="relative">
                 <button
                   ref={avatarRef}
-                  className="flex items-center focus:outline-none"
+                  className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-full"
                   aria-label="User menu"
+                  aria-expanded={isMenuOpen}
+                  aria-haspopup="true"
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
                   {session.user?.image && !session.user.image.includes('null') ? (
@@ -169,7 +180,7 @@ export default function Header() {
                   signIn(process.env.NODE_ENV === 'development' ? 'dev-bypass' : 'github');
                 }}
                 disabled={isButtonLoading}
-                className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-foreground dark:hover:text-foreground transition-colors"
+                className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-foreground dark:hover:text-foreground transition-colors px-2 py-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 {isButtonLoading ? (
                   <svg className="animate-spin h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
