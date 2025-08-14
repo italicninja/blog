@@ -36,17 +36,17 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.11",
     "@types/jest": "^30.0.0",
-    "@types/node": "^24.1.0",
+    "@types/node": "^24.2.1",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "autoprefixer": "^10.4.21",
     "dotenv-cli": "^10.0.0",
-    "eslint": "^9.32.0",
-    "eslint-config-next": "^15.4.5",
-    "prisma": "^6.13.0",
+    "eslint": "^9.33.0",
+    "eslint-config-next": "^15.4.6",
+    "prisma": "^6.14.0",
     "tailwindcss": "^4.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
-    "vercel": "^44.6.6"
+    "vercel": "^45.0.9"
   }
 }
