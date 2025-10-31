@@ -1,4 +1,5 @@
 import prisma from './prisma';
+import { isOwner } from './auth-utils';
 
 /**
  * Check if a GitHub user is authorized to post
@@ -7,9 +8,9 @@ import prisma from './prisma';
  */
 export async function isAuthorizedPoster(githubLogin: string): Promise<boolean> {
   if (!githubLogin) return false;
-  
-  // Special case for italicninja - always authorized
-  if (githubLogin === 'italicninja') return true;
+
+  // Special case for blog owner - always authorized
+  if (isOwner(githubLogin)) return true;
 
   try {
     // Check if the GitHub login exists in the AuthorizedPoster table using raw SQL
@@ -232,8 +233,8 @@ export async function hasPermission(
 ): Promise<boolean> {
   if (!githubLogin) return false;
 
-  // Special case for italicninja - always grant all permissions
-  if (githubLogin === 'italicninja') return true;
+  // Special case for blog owner - always grant all permissions
+  if (isOwner(githubLogin)) return true;
 
   try {
     // Get the authorized poster using raw SQL
