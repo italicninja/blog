@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    NODE_ENV: process.env.NODE_ENV || 'development',
     NEXT_PUBLIC_ENABLE_DEV_AUTH: process.env.NODE_ENV === 'development' ? 'true' : 'false',
   },
   images: {
