@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { getOwnerGithubLogin } from './auth-utils';
 
 export interface GitHubProject {
   id: number;
@@ -25,10 +26,11 @@ export interface GitHubCommit {
 }
 
 // Cache the result to avoid unnecessary API calls
-export const getTopGitHubProjects = cache(async (username: string = 'italicninja', count: number = 3): Promise<GitHubProject[]> => {
+export const getTopGitHubProjects = cache(async (username?: string, count: number = 3): Promise<GitHubProject[]> => {
+  const owner = username || getOwnerGithubLogin();
   try {
     // Fetch repositories from GitHub API
-    const response = await fetch(`https://api.github.com/users/${username}/repos?sort=stars&per_page=10`, {
+    const response = await fetch(`https://api.github.com/users/${owner}/repos?sort=stars&per_page=10`, {
       headers: {
         'Accept': 'application/vnd.github.v3+json',
       },
@@ -53,10 +55,11 @@ export const getTopGitHubProjects = cache(async (username: string = 'italicninja
 });
 
 // Fetch the latest commit information for the repository
-export const getLatestCommit = cache(async (owner: string = 'italicninja', repo: string = 'blog'): Promise<GitHubCommit | null> => {
+export const getLatestCommit = cache(async (owner?: string, repo: string = 'blog'): Promise<GitHubCommit | null> => {
+  const repoOwner = owner || getOwnerGithubLogin();
   try {
     // Fetch the latest commit from GitHub API
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`, {
+    const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repo}/commits?per_page=1`, {
       headers: {
         'Accept': 'application/vnd.github.v3+json',
       },
@@ -69,7 +72,7 @@ export const getLatestCommit = cache(async (owner: string = 'italicninja', repo:
       // Provide fallback commit info for development/demo purposes
       return {
         sha: 'abcdef1234567890abcdef1234567890abcdef12',
-        html_url: `https://github.com/${owner}/${repo}/commit/abcdef1234567890abcdef1234567890abcdef12`,
+        html_url: `https://github.com/${repoOwner}/${repo}/commit/abcdef1234567890abcdef1234567890abcdef12`,
         commit: {
           author: {
             name: 'Developer',

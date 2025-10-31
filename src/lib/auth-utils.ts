@@ -43,3 +43,28 @@ export function getBaseUrl(): string {
 export function getCallbackUrl(provider: string): string {
   return `${getBaseUrl()}/api/auth/callback/${provider}`;
 }
+
+/**
+ * Gets the owner's GitHub login from environment variables
+ * Defaults to 'italicninja' if not set
+ */
+export function getOwnerGithubLogin(): string {
+  return process.env.OWNER_GITHUB_LOGIN || 'italicninja';
+}
+
+/**
+ * Checks if a GitHub login belongs to the blog owner
+ */
+export function isOwner(githubLogin: string | null | undefined): boolean {
+  if (!githubLogin) return false;
+  return githubLogin === getOwnerGithubLogin();
+}
+
+/**
+ * Gets the GitHub login from a session user object
+ * Handles multiple possible sources for consistency
+ */
+export function getGithubLogin(user: { githubLogin?: string | null; name?: string | null } | null | undefined): string {
+  if (!user) return '';
+  return user.githubLogin || user.name || '';
+}

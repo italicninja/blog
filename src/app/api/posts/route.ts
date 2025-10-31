@@ -6,6 +6,7 @@ import { Prisma, Post } from '@prisma/client';
 import slugify from 'slugify';
 import { authOptions } from '@/lib/auth-options';
 import { z } from 'zod';
+import { getGithubLogin, isOwner } from '@/lib/auth-utils';
 
 type PostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
@@ -51,11 +52,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const githubLogin = session.user.githubLogin || session.user.name || '';
-    
-    // Special case for italicninja - always authorized
-    if (githubLogin === 'italicninja') {
-      // Continue with the request - italicninja is always authorized
+    const githubLogin = getGithubLogin(session.user);
+
+    // Special case for blog owner - always authorized
+    if (isOwner(githubLogin)) {
+      // Continue with the request - blog owner is always authorized
     } else {
       // Check if the user is authorized to post and has publishing permission
       const isAuthorized = await isAuthorizedPoster(githubLogin);
@@ -296,10 +297,10 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const githubLogin = session.user.githubLogin || session.user.name || '';
+    const githubLogin = getGithubLogin(session.user);
 
-    // Special case for italicninja - always authorized
-    if (githubLogin !== 'italicninja') {
+    // Special case for blog owner - always authorized
+    if (!isOwner(githubLogin)) {
       // Check if the user has delete permission
       try {
         const canDelete = await hasPermission(githubLogin, 'delete');
@@ -358,7 +359,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Get the GitHub login from the session
-    const githubLogin = session.user.githubLogin || session.user.name || '';
+    const githubLogin = getGithubLogin(session.user);
 
     // Parse the request body
     const body = await request.json();
@@ -387,7 +388,7 @@ export async function PATCH(request: NextRequest) {
     // Check if the user is the author or has edit permission
     const isAuthor = post.author.githubLogin === githubLogin || post.author.name === githubLogin;
 
-    if (!isAuthor && githubLogin !== 'italicninja') {
+    if (!isAuthor && !isOwner(githubLogin)) {
       try {
         const canEdit = await hasPermission(githubLogin, 'edit');
         if (!canEdit) {
