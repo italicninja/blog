@@ -4,6 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+      time: "03:00"
+      timezone: "Etc/UTC"
     groups:
       # Group production dependencies together
       production-dependencies:
@@ -17,6 +19,8 @@ updates:
           - "*"
     # Include both direct and indirect dependencies
     versioning-strategy: auto
+    # Keep PRs up to date with base branch
+    rebase-strategy: auto
     # Configure pull request settings
     open-pull-requests-limit: 10
     pull-request-branch-name:
@@ -31,3 +35,25 @@ updates:
       - "automerge"
     # Set target branch for pull requests
     target-branch: "main"
+    # Ignore major version updates for potentially breaking packages
+    ignore:
+      # Ignore major versions for Next.js (requires manual migration)
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-major"]
+      # Ignore major versions for Tailwind (v4 has breaking changes)
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      # Ignore major versions for Zod (v4 has breaking changes)
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+      # Ignore major versions for dotenv-cli
+      - dependency-name: "dotenv-cli"
+        update-types: ["version-update:semver-major"]
+      # Ignore major versions for Vercel CLI
+      - dependency-name: "vercel"
+        update-types: ["version-update:semver-major"]
+    # Allow both direct and indirect dependencies
+    allow:
+      - dependency-type: "all"
