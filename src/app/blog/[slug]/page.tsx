@@ -64,21 +64,17 @@ type Params = {
   slug: string;
 };
 
-// Define custom types that satisfy both the Promise interface and have the required properties
-type ParamsWithPromise = Promise<Params> & Params;
-
 type SearchParams = { [key: string]: string | string[] | undefined };
-type SearchParamsWithPromise = Promise<SearchParams> & SearchParams;
 
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: { params: ParamsWithPromise },
+  { params }: { params: Promise<Params> },
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const slug = params.slug;
+  const { slug } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -102,12 +98,12 @@ export async function generateMetadata(
 }
 
 type PageProps = {
-  params: ParamsWithPromise;
-  searchParams?: SearchParamsWithPromise;
+  params: Promise<Params>;
+  searchParams?: Promise<SearchParams>;
 }
 
-export default async function BlogPostPage({ params, searchParams }: PageProps) {
-  const slug = params.slug;
+export default async function BlogPostPage({ params }: PageProps) {
+  const { slug } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
