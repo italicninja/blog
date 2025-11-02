@@ -14,7 +14,7 @@ jobs:
     
     # Prevent concurrent runs to avoid race conditions
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: database-cleanup
       cancel-in-progress: true
     
     steps:
@@ -36,7 +36,7 @@ jobs:
         id: branches
         run: |
           # Get all branches except main/master
-          BRANCHES=$(git branch -r | grep -v "origin/main\|origin/master\|HEAD" | sed 's/origin\///' | tr '\n' ' ')
+          BRANCHES=$(git branch -r | grep -v "origin/main\|origin/master\|HEAD" | sed 's|origin/||' | xargs echo)
           echo "ACTIVE_BRANCHES=${BRANCHES}" >> $GITHUB_OUTPUT
           echo "Active branches: ${BRANCHES}"
       
@@ -49,6 +49,18 @@ jobs:
           NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
           ACTIVE_BRANCHES: ${{ steps.branches.outputs.ACTIVE_BRANCHES }}
         run: |
+          # Validate required environment variables
+          if [[ -z "$NEON_API_KEY" || -z "$NEON_PROJECT_ID" ]]; then
+            echo "Error: NEON_API_KEY and NEON_PROJECT_ID must be set"
+            exit 1
+          fi
+
+          # Validate jq is installed
+          if ! command -v jq &> /dev/null; then
+            echo "Error: jq is not installed"
+            exit 1
+          fi
+
           # List all branches in the Neon project
           echo "Listing all Neon branches..."
           NEON_BRANCHES=$(neonctl branches list --project-id $NEON_PROJECT_ID --api-key $NEON_API_KEY -o json)
@@ -65,19 +77,21 @@ jobs:
             fi
 
             # Check if branch still exists in git
-            if [[ ! " ${ACTIVE_BRANCHES} " =~ " ${BRANCH_NAME} " ]]; then
+            if ! echo "${ACTIVE_BRANCHES}" | grep -q "\b${BRANCH_NAME}\b"; then
               echo "Branch $BRANCH_NAME no longer exists in git. Setting expiration to 3 days from now..."
 
-              # Calculate expiration date (3 days from now)
-              EXPIRY_DATE=$(date -u -d "+3 days" "+%Y-%m-%dT%H:%M:%SZ")
+              # Calculate expiration date (3 days from now) - portable for Linux
+              EXPIRY_DATE=$(date -u -d "+3 days" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -v +3d "+%Y-%m-%dT%H:%M:%SZ")
 
               # Set branch to expire
-              neonctl branches update $BRANCH_ID \
+              if neonctl branches update $BRANCH_ID \
                 --project-id $NEON_PROJECT_ID \
                 --api-key $NEON_API_KEY \
-                --expires-at $EXPIRY_DATE
-
-              echo "Set expiration for branch $BRANCH_NAME to $EXPIRY_DATE"
+                --expires-at $EXPIRY_DATE; then
+                echo "✓ Set expiration for branch $BRANCH_NAME to $EXPIRY_DATE"
+              else
+                echo "✗ Failed to set expiration for branch $BRANCH_NAME"
+              fi
             else
               echo "Branch $BRANCH_NAME still exists in git. No expiration set."
             fi
