@@ -439,6 +439,7 @@ export async function PATCH(request: NextRequest) {
         ...updateData,
         ...(tagConnections ? { tags: tagConnections } : {}),
         updatedAt: new Date(),
+        editedAt: new Date(), // Set the edited timestamp
       },
       include: {
         author: {
