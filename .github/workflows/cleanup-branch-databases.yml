@@ -11,7 +11,8 @@ jobs:
   set-database-expiration:
     name: Set Expiration for Branch Databases
     runs-on: ubuntu-latest
-    
+    environment: Production
+
     # Prevent concurrent runs to avoid race conditions
     concurrency:
       group: database-cleanup
