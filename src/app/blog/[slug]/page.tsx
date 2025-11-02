@@ -9,6 +9,11 @@ import type { Metadata, ResolvingMetadata } from "next";
 import PostContent from "./post-content";
 import { Suspense } from "react";
 import { getImageUrl, isValidImageData } from "@/lib/uploadthing-utils";
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth-options';
+import { getGithubLogin, isOwner } from '@/lib/auth-utils';
+import { hasPermission } from '@/lib/authorized-posters';
+import prisma from '@/lib/prisma';
 
 // Default fallback image path
 const DEFAULT_FALLBACK_IMAGE = '/images/posts/nextjs.jpg';
@@ -110,6 +115,38 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
+  // Check if user can edit this post
+  const session = await getServerSession(authOptions);
+  let canEdit = false;
+
+  if (session) {
+    const githubLogin = getGithubLogin(session.user);
+
+    // Get the full post from database to check author
+    const dbPost = await prisma.post.findUnique({
+      where: { slug },
+      include: { author: true },
+    });
+
+    if (dbPost) {
+      // Check if the user is the author or has edit permission
+      const isAuthor = dbPost.author.githubLogin === githubLogin || dbPost.author.name === githubLogin;
+      const isOwnerUser = isOwner(githubLogin);
+
+      canEdit = isAuthor || isOwnerUser;
+
+      // If not author or owner, check for edit permission
+      if (!canEdit) {
+        try {
+          canEdit = await hasPermission(githubLogin, 'edit');
+        } catch (error) {
+          console.error('Error checking edit permission:', error);
+          canEdit = false;
+        }
+      }
+    }
+  }
+
   // Get related posts - first try posts with the same tag, then fall back to recent posts
   let relatedPosts: NonNullable<Awaited<ReturnType<typeof getPostBySlug>>>[] = [];
   if (post.tags.length > 0) {
@@ -144,28 +181,52 @@ export default async function BlogPostPage({ params }: PageProps) {
           <div className="max-w-3xl mx-auto">
             {/* Post Header */}
             <header className="mb-12">
-              <div className="mb-4 flex items-center">
-                <time className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase" dateTime={post.date}>
-                  {formatDate(post.date)}
-                </time>
-                {post.author && (
-                  <div className="ml-4 flex items-center">
-                    <span className="text-gray-400 mx-2">•</span>
-                    <div className="flex items-center">
-                      {post.author.image && (
-                        <Image
-                          src={post.author.image}
-                          alt={post.author.name || "Author"}
-                          width={24}
-                          height={24}
-                          className="rounded-full mr-2"
-                        />
-                      )}
-                      <span className="text-sm text-gray-600 dark:text-gray-300">
-                        {post.author.name}
-                      </span>
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <time className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase" dateTime={post.date}>
+                    {formatDate(post.date)}
+                  </time>
+                  {post.author && (
+                    <div className="ml-4 flex items-center">
+                      <span className="text-gray-400 mx-2">•</span>
+                      <div className="flex items-center">
+                        {post.author.image && (
+                          <Image
+                            src={post.author.image}
+                            alt={post.author.name || "Author"}
+                            width={24}
+                            height={24}
+                            className="rounded-full mr-2"
+                          />
+                        )}
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          {post.author.name}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                </div>
+                {canEdit && (
+                  <Link
+                    href={`/blog/${post.slug}/edit`}
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    Edit Post
+                  </Link>
                 )}
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
@@ -200,7 +261,16 @@ export default async function BlogPostPage({ params }: PageProps) {
             <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-medium prose-headings:tracking-tight prose-a:text-accent prose-a:no-underline hover:prose-a:text-accent-light prose-a:transition-colors prose-img:rounded-md">
               <PostContent content={post.content} />
             </div>
-            
+
+            {/* Edited timestamp */}
+            {post.editedAt && (
+              <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                  Last edited on {formatDate(post.editedAt)}
+                </p>
+              </div>
+            )}
+
             {/* Post Footer */}
             <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800">
               <div className="flex items-center justify-between">

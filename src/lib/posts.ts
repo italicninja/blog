@@ -14,6 +14,7 @@ export interface Post {
   date: string;
   coverImage: string;
   tags: string[];
+  editedAt?: string;
   author?: {
     id: string;
     name: string;
@@ -41,6 +42,7 @@ function convertPrismaPostToPost(
     date: post.publishedAt?.toISOString() || post.createdAt.toISOString(),
     coverImage: post.coverImage || '',
     tags: post.tags ? post.tags.map(tag => tag.name) : [],
+    editedAt: post.editedAt?.toISOString(),
     author: post.author ? {
       id: post.author.id,
       name: post.author.name || '',
