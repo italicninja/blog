@@ -17,12 +17,12 @@
     "test:css:setup": "npm install puppeteer pixelmatch pngjs fs-extra --save-dev"
   },
   "dependencies": {
-    "@prisma/client": "^6.11.0",
+    "@prisma/client": "^7.0.1",
     "@uploadthing/react": "^7.3.2",
     "dotenv": "^17.0.1",
-    "framer-motion": "^12.23.0",
+    "framer-motion": "^12.23.25",
     "gray-matter": "^4.0.3",
-    "next": "15.3.4",
+    "next": "15.5.6",
     "next-auth": "^4.24.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
