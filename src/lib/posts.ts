@@ -1,5 +1,6 @@
 import { remark } from 'remark';
 import html from 'remark-html';
+import DOMPurify from 'isomorphic-dompurify';
 import prisma from '@/lib/prisma';
 import { Post as PrismaPost, Tag, User, Prisma } from '@prisma/client';
 import { cache } from 'react';
@@ -138,7 +139,30 @@ export async function getPostContentHtml(content: string): Promise<string> {
       }
     });
 
-    return htmlContent;
+    // Sanitize HTML to prevent XSS attacks
+    // Allow safe HTML tags and attributes for blog content
+    const sanitizedHtml = DOMPurify.sanitize(htmlContent, {
+      ALLOWED_TAGS: [
+        'p', 'br', 'strong', 'em', 'u', 'del', 's', 'strike',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li',
+        'a', 'img',
+        'code', 'pre',
+        'blockquote',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'hr',
+        'div', 'span'
+      ],
+      ALLOWED_ATTR: [
+        'href', 'src', 'alt', 'title', 'class', 'id',
+        'target', 'rel' // For links
+      ],
+      ALLOW_DATA_ATTR: false,
+      // Allow only safe protocols for links
+      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+    });
+
+    return sanitizedHtml;
   } catch (error) {
     console.error('Error converting markdown to HTML:', error);
     // Return the original content as a fallback
