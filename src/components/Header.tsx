@@ -65,17 +65,15 @@ export default function Header() {
     <header
       className={`sticky top-0 z-50 backdrop-blur-sm transition-all duration-300 ${
         scrolled
-          ? 'bg-background/80 shadow-sm py-2'
-          : 'bg-background py-6'
+          ? 'bg-background/80 shadow-sm py-3'
+          : 'bg-background py-4'
       }`}
     >
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center">
           <Link
             href="/"
-            className={`font-medium tracking-tight hover:opacity-80 transition-all duration-300 ${
-              scrolled ? 'text-lg' : 'text-2xl'
-            }`}
+            className="font-medium tracking-tight hover:opacity-80 transition-all duration-300 text-xl"
           >
             italicninja
           </Link>
@@ -111,9 +109,7 @@ export default function Header() {
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                 >
                   {session.user?.image && !session.user.image.includes('null') ? (
-                    <div className={`rounded-full overflow-hidden transition-all duration-300 ${
-                      scrolled ? 'w-8 h-8' : 'w-10 h-10'
-                    } border-2 border-transparent hover:border-accent`}>
+                    <div className="rounded-full overflow-hidden transition-all duration-300 w-9 h-9 border-2 border-transparent hover:border-accent">
                       <img
                         src={session.user.image}
                         alt={session.user.name || "User avatar"}
@@ -125,9 +121,7 @@ export default function Header() {
                       />
                     </div>
                   ) : (
-                    <div className={`rounded-full bg-accent text-white flex items-center justify-center transition-all duration-300 ${
-                      scrolled ? 'w-8 h-8 text-sm' : 'w-10 h-10 text-base'
-                    }`}>
+                    <div className="rounded-full bg-accent text-white flex items-center justify-center transition-all duration-300 w-9 h-9 text-sm">
                       {session.user?.name?.charAt(0) || session.user?.email?.charAt(0) || "U"}
                     </div>
                   )}
