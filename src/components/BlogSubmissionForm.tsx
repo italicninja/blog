@@ -179,22 +179,22 @@ export default function BlogSubmissionForm() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold mb-6">Submit a New Blog Post</h2>
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-4">
+      <h2 className="text-xl font-bold mb-4">Submit a New Blog Post</h2>
       
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400">
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400">
           {error}
         </div>
       )}
-      
+
       {success && (
-        <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md text-green-600 dark:text-green-400">
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md text-green-600 dark:text-green-400">
           Blog post submitted successfully! Redirecting to your post...
         </div>
       )}
 
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
         {/* Title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -233,8 +233,8 @@ export default function BlogSubmissionForm() {
           </label>
 
           {formData.coverImage ? (
-            <div className="relative mb-4">
-              <div className="relative w-full h-48 rounded-md overflow-hidden">
+            <div className="relative mb-3">
+              <div className="relative w-full h-40 rounded-md overflow-hidden">
                 <Image
                   src={formData.coverImage}
                   alt="Cover image preview"
@@ -254,7 +254,7 @@ export default function BlogSubmissionForm() {
               </button>
             </div>
           ) : (
-            <div className="mb-4">
+            <div className="mb-3">
               <OurUploadDropzone
                 endpoint="imageUploader"
                 onClientUploadComplete={(res: Array<{ url: string; fileKey?: string }>) => {
