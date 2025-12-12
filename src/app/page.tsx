@@ -7,6 +7,9 @@ import EnhancedBlogCard from "@/components/EnhancedBlogCard";
 import GitHubProjectsCard from "@/components/GitHubProjectsCard";
 import { AnimatedContainer, AnimatedHeading, HoverLink } from "@/components/AnimatedContainer";
 
+// Revalidate this page every 60 seconds
+export const revalidate = 60;
+
 export default async function Home() {
   const recentPosts = await getRecentPosts(3);
   const topProjects = await getTopGitHubProjects('italicninja', 3);
