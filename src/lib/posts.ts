@@ -266,6 +266,32 @@ export const getRecentPosts = cache(async (count: number = 3): Promise<Post[]> =
   return posts.map(convertPrismaPostToPost);
 });
 
+// Get all cover images from published posts for hero banner
+export const getCoverImages = cache(async (): Promise<string[]> => {
+  const where = {
+    status: 'PUBLISHED',
+  } as unknown as Prisma.PostWhereInput;
+
+  const posts = await prisma.post.findMany({
+    where,
+    select: {
+      coverImage: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  // Filter out posts without cover images and process the image URLs
+  const coverImages = posts
+    .map(post => post.coverImage)
+    .filter((image): image is string => !!image && isValidImageData(image))
+    .map(image => getImageUrl(image))
+    .filter((url): url is string => !!url && url.length > 0);
+
+  return coverImages;
+});
+
 // Get posts by tag
 export const getPostsByTag = cache(async (tag: string): Promise<Post[]> => {
   const where = {

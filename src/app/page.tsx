@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getRecentPosts } from "@/lib/posts";
+import HeroBanner from "@/components/HeroBanner";
+import { getRecentPosts, getCoverImages } from "@/lib/posts";
 import { getTopGitHubProjects } from "@/lib/github";
 import EnhancedBlogCard from "@/components/EnhancedBlogCard";
 import GitHubProjectsCard from "@/components/GitHubProjectsCard";
@@ -13,31 +14,15 @@ export const revalidate = 60;
 export default async function Home() {
   const recentPosts = await getRecentPosts(3);
   const topProjects = await getTopGitHubProjects('italicninja', 3);
+  const coverImages = await getCoverImages();
 
   return (
     <>
       <Header />
 
       <main className="min-h-screen">
-        {/* Hero Section - Reduced by 50% */}
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <div className="max-w-xl mx-auto text-center">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
-                Italicninja
-              </h1>
-              <p className="text-base text-gray-600 dark:text-gray-300 mb-5 leading-relaxed">
-                My random thoughts on DevOps, automation, and teaching robots to do my job 🤖
-              </p>
-              <Link
-                href="/blog"
-                className="btn btn-primary px-4 py-2 text-sm rounded-md"
-              >
-                Read the Blog
-              </Link>
-            </div>
-          </div>
-        </section>
+        {/* Hero Banner with Cycling Backgrounds */}
+        <HeroBanner coverImages={coverImages} />
 
         {/* Recent Posts and GitHub Projects Section */}
         <section className="py-24 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
