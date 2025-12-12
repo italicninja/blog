@@ -20,8 +20,8 @@ export default function GitHubProjectsCard({ projects }: GitHubProjectsCardProps
         {/* Decorative header gradient */}
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-90"></div>
         
-        <div className="relative flex justify-between items-center p-6">
-          <h2 className="text-2xl font-bold tracking-tight text-white">
+        <div className="relative flex justify-between items-center p-4">
+          <h2 className="text-xl font-bold tracking-tight text-white">
             My GitHub Stuff
           </h2>
           <Link
@@ -38,24 +38,24 @@ export default function GitHubProjectsCard({ projects }: GitHubProjectsCardProps
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
         {projects.map((project, index) => (
-          <motion.div 
-            key={project.id} 
-            className="group border-b border-gray-200 dark:border-gray-700 pb-6 last:border-0 last:pb-0"
+          <motion.div
+            key={project.id}
+            className="group border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
             whileHover={{ x: 5 }}
           >
-            <div className="flex justify-between items-start mb-2">
-              <Link 
-                href={project.html_url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+            <div className="flex justify-between items-start mb-1">
+              <Link
+                href={project.html_url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group-hover:underline decoration-1 underline-offset-2"
               >
-                <h3 className="text-lg font-semibold text-foreground bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+                <h3 className="text-base font-semibold text-foreground bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                   {project.name}
                 </h3>
               </Link>
@@ -80,7 +80,7 @@ export default function GitHubProjectsCard({ projects }: GitHubProjectsCardProps
                 </motion.span>
               </div>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3 line-clamp-2">
+            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-2 line-clamp-2">
               {project.description || "No description available"}
             </p>
             <div className="flex justify-between items-center">

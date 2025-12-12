@@ -13,7 +13,7 @@ export const revalidate = 60;
 
 export default async function Home() {
   const recentPosts = await getRecentPosts(6);
-  const topProjects = await getTopGitHubProjects('italicninja', 3);
+  const topProjects = await getTopGitHubProjects('italicninja', 4);
   const coverImages = await getCoverImages();
 
   return (
