@@ -23,16 +23,29 @@ declare module "next-auth/jwt" {
   }
 }
 
+// Determine if development authentication bypass should be enabled
+// Multiple safeguards to prevent accidental use in production
+const isDevelopmentBypassEnabled =
+  process.env.NODE_ENV === 'development' &&
+  !process.env.VERCEL_ENV &&
+  process.env.ENABLE_DEV_AUTH === 'true';
+
+// Log warning if dev bypass is enabled
+if (isDevelopmentBypassEnabled) {
+  console.warn('⚠️  DEVELOPMENT AUTHENTICATION BYPASS IS ENABLED - DO NOT USE IN PRODUCTION');
+}
+
 // Configure NextAuth options
 export const authOptions: AuthOptions = {
   providers: [
-    ...(process.env.NODE_ENV === 'development' ? [
+    ...(isDevelopmentBypassEnabled ? [
       CredentialsProvider({
         id: 'dev-bypass',
         name: 'Development Bypass',
         credentials: {},
         async authorize() {
           // Auto-authenticate with developer credentials
+          console.warn('⚠️  Dev bypass authentication used');
           return {
             id: 'dev-user',
             name: 'Developer',
