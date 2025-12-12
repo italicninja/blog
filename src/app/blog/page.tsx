@@ -7,9 +7,6 @@ import SortDropdown from "@/components/SortDropdown";
 import Link from "next/link";
 import { Suspense } from "react";
 
-// Define a custom type that satisfies both the Promise interface and has the searchParams properties
-type SearchParamsWithPromise = Promise<BlogPageProps['searchParams']> & BlogPageProps['searchParams'];
-
 export const metadata = {
   title: 'Blog | Italicninja',
   description: 'My random thoughts on DevOps, automation, and teaching robots to do my job.',
@@ -29,13 +26,16 @@ interface BlogPageProps {
 export default async function BlogPage({
   searchParams
 }: {
-  searchParams: SearchParamsWithPromise
+  searchParams: Promise<BlogPageProps['searchParams']>
 }) {
-  // Parse query parameters - access properties directly
-  const currentPage = searchParams.page ? parseInt(searchParams.page, 10) : 1;
-  const tag = searchParams.tag || null;
-  const search = searchParams.search || null;
-  const sort = searchParams.sort || 'newest';
+  // Await searchParams as required in Next.js 15
+  const params = await searchParams;
+
+  // Parse query parameters
+  const currentPage = params.page ? parseInt(params.page, 10) : 1;
+  const tag = params.tag || null;
+  const search = params.search || null;
+  const sort = params.sort || 'newest';
 
   // Determine sort options
   const sortOptions: Record<string, { orderBy: 'createdAt' | 'publishedAt' | 'title', orderDirection: 'asc' | 'desc' }> = {
