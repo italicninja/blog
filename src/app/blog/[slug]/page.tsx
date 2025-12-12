@@ -177,10 +177,10 @@ export default async function BlogPostPage({ params }: PageProps) {
       <Header />
       
       <main className="min-h-screen">
-        <article className="container mx-auto px-4 py-16 md:py-24">
+        <article className="container mx-auto px-4 py-12 md:py-16">
           <div className="max-w-3xl mx-auto">
             {/* Post Header */}
-            <header className="mb-12">
+            <header className="mb-8">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center">
                   <time className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase" dateTime={post.date}>
@@ -229,10 +229,10 @@ export default async function BlogPostPage({ params }: PageProps) {
                   </Link>
                 )}
               </div>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
                 {post.title}
               </h1>
-              <div className="flex flex-wrap gap-2 mb-10">
+              <div className="flex flex-wrap gap-2 mb-6">
                 {post.tags.map((tag) => (
                   <Link
                     key={tag}
@@ -244,7 +244,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 ))}
               </div>
               {post.coverImage && (
-                <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden mb-12">
+                <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden mb-8">
                   <SafeImage
                     src={post.coverImage}
                     alt={post.title}
@@ -272,7 +272,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             )}
 
             {/* Post Footer */}
-            <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800">
+            <div className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-800">
               <div className="flex items-center justify-between">
                 <Link
                   href="/blog"
@@ -324,9 +324,9 @@ export default async function BlogPostPage({ params }: PageProps) {
 
           {/* Related Posts */}
           {relatedPosts.length > 0 && (
-            <div className="max-w-7xl mx-auto mt-24 mb-12">
-              <h2 className="text-2xl font-medium tracking-tight text-foreground mb-12">More posts</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="max-w-7xl mx-auto mt-16 mb-8">
+              <h2 className="text-xl font-medium tracking-tight text-foreground mb-6">More posts</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {relatedPosts.map((relatedPost) => (
                   <article key={relatedPost.slug} className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-200 hover:shadow-medium">
                     <div className="relative aspect-[16/9] w-full overflow-hidden">
@@ -338,18 +338,18 @@ export default async function BlogPostPage({ params }: PageProps) {
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
-                    <div className="flex flex-col flex-grow p-6">
-                      <div className="mb-3">
+                    <div className="flex flex-col flex-grow p-4">
+                      <div className="mb-2">
                         <time dateTime={relatedPost.date} className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase">
                           {formatDate(relatedPost.date)}
                         </time>
                       </div>
                       <Link href={`/blog/${relatedPost.slug}`} className="group-hover:underline decoration-1 underline-offset-2">
-                        <h3 className="text-xl font-medium tracking-tight text-foreground mb-3 line-clamp-2">
+                        <h3 className="text-lg font-medium tracking-tight text-foreground mb-2 line-clamp-2">
                           {relatedPost.title}
                         </h3>
                       </Link>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2 flex-grow">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 flex-grow">
                         {relatedPost.excerpt}
                       </p>
                       <Link

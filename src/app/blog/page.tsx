@@ -64,23 +64,23 @@ export default async function BlogPage({
       <Header />
 
       <main className="min-h-screen">
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="max-w-7xl mx-auto">
-            <div className="mb-16 md:mb-24">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 drop-shadow-sm text-center">
+            <div className="mb-10 md:mb-12">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 drop-shadow-sm text-center">
                 Blog
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto text-center leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto text-center leading-relaxed">
                 Random brain dumps about tech stuff I find interesting.
               </p>
             </div>
 
-            <AnimatedContainer className="flex flex-col lg:flex-row gap-8 mb-16">
+            <AnimatedContainer className="flex flex-col lg:flex-row gap-6 mb-12">
               {/* Main Content - Blog Posts Grid */}
               <div className="w-full lg:w-2/3">
                 {/* Filters and Sort */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-2xl font-bold tracking-tight text-foreground mb-4 md:mb-0">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-3 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="text-xl font-bold tracking-tight text-foreground mb-3 md:mb-0">
                     {tag ? `Posts tagged "${tag}"` : search ? `Search: "${search}"` : "All Posts"}
                   </h2>
 
@@ -112,7 +112,7 @@ export default async function BlogPage({
                 {/* Posts Grid */}
                 <Suspense fallback={<div>Loading posts...</div>}>
                   {posts.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {posts.map((post, index) => (
                         <EnhancedBlogCard key={post.slug} post={post} index={index} />
                       ))}
@@ -132,7 +132,7 @@ export default async function BlogPage({
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center mt-12">
+                  <div className="flex justify-center mt-8">
                     <nav className="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                       {/* Previous Page */}
                       <Link
@@ -209,8 +209,8 @@ export default async function BlogPage({
               {/* Sidebar */}
               <div className="w-full lg:w-1/3">
                 {/* Tags */}
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-6">
-                  <h3 className="text-lg font-semibold mb-4">Tags</h3>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-4">
+                  <h3 className="text-base font-semibold mb-3">Tags</h3>
                   <div className="flex flex-wrap gap-2">
                     {tags.map((tag) => (
                       <Link
