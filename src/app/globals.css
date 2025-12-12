@@ -41,12 +41,12 @@
   --gray-800: #1e293b;
   --gray-900: #0f172a;
 
-  /* Spacing */
-  --gap-quarter: 0.25rem;
-  --gap-half: 0.5rem;
-  --gap: 1rem;
-  --gap-double: 2rem;
-  --gap-triple: 3rem;
+  /* Spacing - Reduced for tighter layout */
+  --gap-quarter: 0.2rem;
+  --gap-half: 0.4rem;
+  --gap: 0.75rem;
+  --gap-double: 1.5rem;
+  --gap-triple: 2.25rem;
 
   /* Radius - More modern, slightly larger */
   --radius: 6px;

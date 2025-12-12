@@ -25,12 +25,12 @@ export default async function Home() {
         <HeroBanner coverImages={coverImages} />
 
         {/* Recent Posts and GitHub Projects Section */}
-        <section className="py-24 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+        <section className="py-16 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
           <div className="container mx-auto px-4">
             <div className="max-w-7xl mx-auto">
-              <AnimatedContainer className="flex flex-col lg:flex-row gap-8 items-start">
+              <AnimatedContainer className="flex flex-col lg:flex-row gap-6 items-start">
                 {/* Sidebar - GitHub Projects (on left side) */}
-                <div className="w-full lg:w-1/3 mb-8 lg:mb-0 order-2 lg:order-1">
+                <div className="w-full lg:w-1/3 mb-6 lg:mb-0 order-2 lg:order-1">
                   <div className="sticky top-24">
                     <GitHubProjectsCard projects={topProjects} />
                   </div>
@@ -38,7 +38,7 @@ export default async function Home() {
 
                 {/* Main Content - Recent Posts */}
                 <div className="w-full lg:w-2/3 order-1 lg:order-2">
-                  <div className="flex justify-between items-center mb-10">
+                  <div className="flex justify-between items-center mb-6">
                     <AnimatedHeading className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
                       Recent Posts
                     </AnimatedHeading>
@@ -55,7 +55,7 @@ export default async function Home() {
                     </HoverLink>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {recentPosts.map((post, index) => (
                       <EnhancedBlogCard key={post.slug} post={post} index={index} />
                     ))}
@@ -67,12 +67,12 @@ export default async function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="py-24">
+        <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="max-w-7xl mx-auto">
-              <h2 className="text-3xl font-medium tracking-tight text-center text-foreground mb-16">Topics I Write About</h2>
+              <h2 className="text-3xl font-medium tracking-tight text-center text-foreground mb-10">Topics I Write About</h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="group relative bg-background border border-gray-200 dark:border-gray-800 rounded-lg p-8 transition-all duration-200 hover:shadow-medium">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent to-accent-light transform -translate-y-px opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                   <div className="text-accent mb-6">

@@ -24,7 +24,7 @@ export default function HeroBanner({ coverImages }: HeroBannerProps) {
   }, [coverImages.length]);
 
   return (
-    <section className="relative py-24 md:py-32 overflow-hidden">
+    <section className="relative py-16 md:py-20 overflow-hidden">
       {/* Animated Background Images */}
       <div className="absolute inset-0 z-0">
         <AnimatePresence mode="sync">
@@ -41,7 +41,7 @@ export default function HeroBanner({ coverImages }: HeroBannerProps) {
                 className="absolute inset-0 bg-cover bg-center"
                 style={{
                   backgroundImage: `url(${coverImages[currentImageIndex]})`,
-                  filter: 'blur(8px) brightness(0.4)',
+                  filter: 'blur(4px) brightness(0.4)',
                   transform: 'scale(1.1)', // Slight scale to hide blur edges
                 }}
               />
@@ -80,7 +80,7 @@ export default function HeroBanner({ coverImages }: HeroBannerProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed"
+            className="text-xl md:text-2xl text-gray-300 mb-6 leading-relaxed"
           >
             My random thoughts on DevOps, automation, and teaching robots to do my job{' '}
             <span className="inline-block animate-pulse-slow">🤖</span>
@@ -106,7 +106,7 @@ export default function HeroBanner({ coverImages }: HeroBannerProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className="flex justify-center gap-2 mt-12"
+              className="flex justify-center gap-2 mt-8"
             >
               {coverImages.map((_, index) => (
                 <button
