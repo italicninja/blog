@@ -3,46 +3,71 @@
 @tailwind utilities;
 
 :root {
-  /* Vercel-inspired color palette */
-  --background: #ffffff;
-  --foreground: #000000;
-  --accent: #0070f3;
-  --accent-light: #3291ff;
-  --accent-dark: #0761d1;
-  --indigo: #4f46e5; /* Added for consistency with Tailwind indigo */
-  --indigo-light: #6366f1;
-  --indigo-dark: #4338ca;
-  --gray-50: #fafafa;
-  --gray-100: #f5f5f5;
-  --gray-200: #eaeaea;
-  --gray-300: #e0e0e0;
-  --gray-400: #bdbdbd;
-  --gray-500: #9e9e9e;
-  --gray-600: #757575;
-  --gray-700: #616161;
-  --gray-800: #424242;
-  --gray-900: #212121;
+  /* Modern Tech-inspired color palette */
+  --background: #fafbfc;
+  --background-secondary: #ffffff;
+  --foreground: #0f172a;
+  --foreground-secondary: #334155;
 
-  /* Spacing */
-  --gap-quarter: 0.25rem;
-  --gap-half: 0.5rem;
-  --gap: 1rem;
-  --gap-double: 2rem;
-  --gap-triple: 3rem;
+  /* Primary accent - Cyber Blue */
+  --accent: #06b6d4;
+  --accent-light: #22d3ee;
+  --accent-dark: #0891b2;
 
-  /* Radius */
-  --radius: 5px;
-  --radius-medium: 8px;
-  --radius-large: 12px;
+  /* Secondary accent - Electric Purple */
+  --secondary: #8b5cf6;
+  --secondary-light: #a78bfa;
+  --secondary-dark: #7c3aed;
 
-  /* Shadows */
-  --shadow-smallest: 0 2px 4px rgba(0,0,0,0.05);
-  --shadow-small: 0 5px 10px rgba(0,0,0,0.08);
-  --shadow-medium: 0 8px 30px rgba(0,0,0,0.12);
-  --shadow-large: 0 30px 60px rgba(0,0,0,0.15);
+  /* Tertiary accent - Matrix Green (for success/automation themed elements) */
+  --tertiary: #10b981;
+  --tertiary-light: #34d399;
+  --tertiary-dark: #059669;
+
+  /* Gradient definitions */
+  --gradient-primary: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%);
+  --gradient-secondary: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --gradient-accent: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+
+  /* Gray scale - Warmer tones */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+
+  /* Spacing - Reduced for tighter layout */
+  --gap-quarter: 0.2rem;
+  --gap-half: 0.4rem;
+  --gap: 0.75rem;
+  --gap-double: 1.5rem;
+  --gap-triple: 2.25rem;
+
+  /* Radius - More modern, slightly larger */
+  --radius: 6px;
+  --radius-medium: 10px;
+  --radius-large: 16px;
+  --radius-xl: 24px;
+
+  /* Shadows - More pronounced with color tints */
+  --shadow-smallest: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-small: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+  --shadow-medium: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+  --shadow-large: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+
+  /* Colored shadows for accent elements */
+  --shadow-accent: 0 10px 25px -5px rgba(6, 182, 212, 0.3), 0 4px 6px -2px rgba(6, 182, 212, 0.15);
+  --shadow-secondary: 0 10px 25px -5px rgba(139, 92, 246, 0.3), 0 4px 6px -2px rgba(139, 92, 246, 0.15);
 
   /* Focus styles */
-  --focus-ring: 0 0 0 3px rgba(0, 112, 243, 0.5);
+  --focus-ring: 0 0 0 3px rgba(6, 182, 212, 0.4);
+  --focus-ring-secondary: 0 0 0 3px rgba(139, 92, 246, 0.4);
 }
 
 /* Removed @theme inline directive which is a Tailwind CSS v4 feature */
@@ -55,33 +80,58 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #000000;
-    --foreground: #ffffff;
-    --accent: #0070f3;
-    --accent-light: #3291ff;
-    --accent-dark: #0761d1;
-    --indigo: #6366f1; /* Adjusted for better visibility in dark mode */
-    --indigo-light: #818cf8;
-    --indigo-dark: #4f46e5;
-    --gray-50: #111111;
-    --gray-100: #181818;
-    --gray-200: #222222;
-    --gray-300: #2a2a2a;
-    --gray-400: #444444;
-    --gray-500: #666666;
-    --gray-600: #888888;
-    --gray-700: #999999;
-    --gray-800: #bbbbbb;
-    --gray-900: #eeeeee;
+    /* Dark mode - Deep space theme */
+    --background: #0a0e1a;
+    --background-secondary: #111827;
+    --foreground: #f1f5f9;
+    --foreground-secondary: #cbd5e1;
 
-    /* Shadows for dark mode */
-    --shadow-smallest: 0 2px 4px rgba(0,0,0,0.3);
-    --shadow-small: 0 5px 10px rgba(0,0,0,0.4);
-    --shadow-medium: 0 8px 30px rgba(0,0,0,0.5);
-    --shadow-large: 0 30px 60px rgba(0,0,0,0.6);
+    /* Primary accent - Brighter Cyber Blue for dark mode */
+    --accent: #22d3ee;
+    --accent-light: #67e8f9;
+    --accent-dark: #06b6d4;
+
+    /* Secondary accent - Vibrant Purple */
+    --secondary: #a78bfa;
+    --secondary-light: #c4b5fd;
+    --secondary-dark: #8b5cf6;
+
+    /* Tertiary accent - Bright Matrix Green */
+    --tertiary: #34d399;
+    --tertiary-light: #6ee7b7;
+    --tertiary-dark: #10b981;
+
+    /* Gradient definitions for dark mode */
+    --gradient-primary: linear-gradient(135deg, #22d3ee 0%, #a78bfa 100%);
+    --gradient-secondary: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+    --gradient-accent: linear-gradient(135deg, #34d399 0%, #22d3ee 100%);
+
+    /* Gray scale - True dark mode palette */
+    --gray-50: #0f172a;
+    --gray-100: #1e293b;
+    --gray-200: #334155;
+    --gray-300: #475569;
+    --gray-400: #64748b;
+    --gray-500: #94a3b8;
+    --gray-600: #cbd5e1;
+    --gray-700: #e2e8f0;
+    --gray-800: #f1f5f9;
+    --gray-900: #f8fafc;
+
+    /* Shadows for dark mode - with glow effects */
+    --shadow-smallest: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-small: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+
+    /* Colored shadows with glow for dark mode */
+    --shadow-accent: 0 10px 25px -5px rgba(34, 211, 238, 0.4), 0 4px 6px -2px rgba(34, 211, 238, 0.2);
+    --shadow-secondary: 0 10px 25px -5px rgba(167, 139, 250, 0.4), 0 4px 6px -2px rgba(167, 139, 250, 0.2);
 
     /* Focus styles for dark mode */
-    --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.6);
+    --focus-ring: 0 0 0 3px rgba(34, 211, 238, 0.5), 0 0 20px rgba(34, 211, 238, 0.2);
+    --focus-ring-secondary: 0 0 0 3px rgba(167, 139, 250, 0.5), 0 0 20px rgba(167, 139, 250, 0.2);
   }
 }
 
@@ -142,17 +192,35 @@ a:focus-visible {
   border-radius: var(--radius);
 }
 
-/* Vercel-style button */
+/* Modern button styles */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius);
-  font-weight: 500;
-  padding: 0 var(--gap);
-  height: 2.5rem;
-  transition: all 0.2s ease;
+  border-radius: var(--radius-medium);
+  font-weight: 600;
+  padding: 0 var(--gap-double);
+  height: 2.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn:hover::before {
+  opacity: 1;
 }
 
 .btn:focus-visible {
@@ -161,38 +229,102 @@ a:focus-visible {
 }
 
 .btn-primary {
-  background: var(--foreground);
-  color: var(--background);
-  border: 1px solid var(--foreground);
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  box-shadow: var(--shadow-accent);
 }
 
 .btn-primary:hover {
-  background: var(--gray-800);
-  color: var(--background);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-large);
 }
 
 .btn-secondary {
-  background: transparent;
-  color: var(--foreground);
-  border: 1px solid var(--gray-300);
+  background: var(--background-secondary);
+  color: var(--accent);
+  border: 2px solid var(--accent);
 }
 
 .btn-secondary:hover {
-  border-color: var(--foreground);
+  background: var(--accent);
+  color: white;
+  box-shadow: var(--shadow-accent);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--foreground);
+  border: 2px solid var(--gray-300);
+}
+
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-gradient {
+  background: var(--gradient-secondary);
+  color: white;
+  border: none;
+  box-shadow: var(--shadow-secondary);
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-large);
 }
 
 /* Card styling */
 .card {
-  background: var(--background);
-  border-radius: var(--radius-medium);
+  background: var(--background-secondary);
+  border-radius: var(--radius-large);
   box-shadow: var(--shadow-small);
+  border: 1px solid var(--gray-200);
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-medium);
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-large);
+  border-color: var(--accent);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card-featured {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+
+.card-featured::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-large);
+  z-index: -1;
 }
 
 /* Container */
@@ -272,29 +404,76 @@ pre code {
   }
 }
 
-/* Utility classes for consistent color usage */
-.text-indigo {
-  color: var(--indigo);
+/* Utility classes for the new theme */
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.text-indigo-light {
-  color: var(--indigo-light);
+.text-gradient-secondary {
+  background: var(--gradient-secondary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.hover\:text-indigo-light:hover {
-  color: var(--indigo-light);
+.text-gradient-accent {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.dark\:text-indigo {
-  color: var(--indigo);
+.bg-gradient-primary {
+  background: var(--gradient-primary);
 }
 
-.dark\:text-indigo-light {
-  color: var(--indigo-light);
+.bg-gradient-secondary {
+  background: var(--gradient-secondary);
 }
 
-.dark\:hover\:text-indigo-light:hover {
-  color: var(--indigo-light);
+.bg-gradient-accent {
+  background: var(--gradient-accent);
+}
+
+.glow-accent {
+  box-shadow: var(--shadow-accent);
+}
+
+.glow-secondary {
+  box-shadow: var(--shadow-secondary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--gray-100);
+  color: var(--foreground);
+  border: 1px solid var(--gray-200);
+}
+
+.badge-accent {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.2) 100%);
+  color: var(--accent-dark);
+  border-color: var(--accent);
+}
+
+.badge-secondary {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.2) 100%);
+  color: var(--secondary-dark);
+  border-color: var(--secondary);
+}
+
+.badge-success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.2) 100%);
+  color: var(--tertiary-dark);
+  border-color: var(--tertiary);
 }
 
 /* Aspect ratio fallback for older browsers */

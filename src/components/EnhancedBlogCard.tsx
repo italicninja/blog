@@ -68,24 +68,24 @@ export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps)
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </div>
       
-      <div className="flex flex-col flex-grow p-6">
-        <div className="mb-3 flex items-center">
+      <div className="flex flex-col flex-grow p-4">
+        <div className="mb-2 flex items-center">
           <time dateTime={post.date} className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase">
             {formatDate(post.date)}
           </time>
         </div>
-        
+
         <Link href={`/blog/${post.slug}`} className="group-hover:underline decoration-1 underline-offset-2">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground mb-3 line-clamp-2">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-2 line-clamp-2">
             {post.title}
           </h2>
         </Link>
-        
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-3 flex-grow">
+
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-3 flex-grow">
           {post.excerpt}
         </p>
-        
-        <div className="flex flex-wrap gap-2 mb-4">
+
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {post.tags.map((tag) => (
             <motion.span
               key={tag}

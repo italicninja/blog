@@ -70,9 +70,9 @@ export default async function EditBlogPage({ params }: PageProps) {
       <>
         <Header />
         <main className="min-h-screen">
-          <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="container mx-auto px-4 py-12 md:py-16">
             <div className="max-w-3xl mx-auto">
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
                 <h3 className="text-lg font-medium text-red-800 dark:text-red-200 mb-2">
                   Unauthorized
                 </h3>
@@ -93,13 +93,13 @@ export default async function EditBlogPage({ params }: PageProps) {
       <Header />
 
       <main className="min-h-screen">
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="max-w-3xl mx-auto">
-            <div className="mb-12">
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 drop-shadow-sm text-center">
+            <div className="mb-8">
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 drop-shadow-sm text-center">
                 Edit Blog Post
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto text-center leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto text-center leading-relaxed">
                 Update your blog post content.
               </p>
             </div>

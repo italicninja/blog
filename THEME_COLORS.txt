@@ -1,0 +1,62 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                    ITALICNINJA BLOG - THEME REDESIGN                      ║
+║                         Color Palette Reference                           ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  PRIMARY ACCENT - Cyber Blue (DevOps/Cloud Theme)                        ║
+║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ║
+║    Light:  #22d3ee  ████████  Bright cyan                                ║
+║    Main:   #06b6d4  ████████  Modern turquoise                           ║
+║    Dark:   #0891b2  ████████  Deep cyan                                  ║
+║                                                                           ║
+║  SECONDARY ACCENT - Electric Purple (Innovation Theme)                   ║
+║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ║
+║    Light:  #a78bfa  ████████  Soft purple                                ║
+║    Main:   #8b5cf6  ████████  Vibrant purple                             ║
+║    Dark:   #7c3aed  ████████  Deep purple                                ║
+║                                                                           ║
+║  TERTIARY ACCENT - Matrix Green (Automation Theme)                       ║
+║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ║
+║    Light:  #34d399  ████████  Bright emerald                             ║
+║    Main:   #10b981  ████████  Matrix green                               ║
+║    Dark:   #059669  ████████  Deep emerald                               ║
+║                                                                           ║
+║  GRADIENTS                                                                ║
+║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ║
+║    Primary:    Cyan → Purple      (Main brand gradient)                  ║
+║    Secondary:  Purple → Pink      (Featured elements)                    ║
+║    Accent:     Green → Cyan       (Success/automation)                   ║
+║                                                                           ║
+║  LIGHT MODE BACKGROUND                                                    ║
+║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ║
+║    Primary:    #fafbfc  ░░░░░░░░  Soft gray                              ║
+║    Secondary:  #ffffff  ░░░░░░░░  Pure white                             ║
+║    Text:       #0f172a  ████████  Deep slate                             ║
+║                                                                           ║
+║  DARK MODE BACKGROUND                                                     ║
+║  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ║
+║    Primary:    #0a0e1a  ████████  Deep space                             ║
+║    Secondary:  #111827  ████████  Dark slate                             ║
+║    Text:       #f1f5f9  ░░░░░░░░  Soft white                             ║
+║                                                                           ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║  USAGE EXAMPLES                                                           ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  Gradient Text:                                                           ║
+║    <h1 className="text-gradient">Title</h1>                               ║
+║                                                                           ║
+║  Colored Badge:                                                           ║
+║    <span className="badge badge-accent">DevOps</span>                     ║
+║                                                                           ║
+║  Gradient Button:                                                         ║
+║    <button className="btn btn-primary">Click</button>                     ║
+║                                                                           ║
+║  Glowing Card:                                                            ║
+║    <div className="card shadow-glow-accent">...</div>                     ║
+║                                                                           ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║  PREVIEW: http://localhost:3000/theme-preview                             ║
+║  BRANCH:  theme-redesign                                                  ║
+║  STATUS:  ✅ Ready for review                                             ║
+╚══════════════════════════════════════════════════════════════════════════╝
