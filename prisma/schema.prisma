@@ -3,15 +3,12 @@
 
 generator client {
   provider = "prisma-client-js"
-  // Enable PostgreSQL full-text search
-  previewFeatures = ["fullTextSearchPostgres"]
+  // PostgreSQL full-text search is now stable in Prisma 7
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("POSTGRES_PRISMA_URL")
-  // Enable connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  // Database connection is now configured in prisma.config.ts
 }
 
 // Enums for better type safety

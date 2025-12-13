@@ -1,8 +1,21 @@
 // This script adds an authorized poster to the database
 // Usage: node scripts/add-authorized-poster.js <github-username>
 
+require('dotenv').config({ path: '.env.local' });
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { PrismaPg } = require('@prisma/adapter-pg');
+const { Pool } = require('pg');
+
+// Create PostgreSQL connection pool
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_PRISMA_URL,
+});
+
+// Create Prisma adapter for PostgreSQL
+const adapter = new PrismaPg(pool);
+
+// Initialize Prisma Client with adapter
+const prisma = new PrismaClient({ adapter });
 
 async function addAuthorizedPoster(githubLogin) {
   if (!githubLogin) {
@@ -38,6 +51,7 @@ async function addAuthorizedPoster(githubLogin) {
     process.exit(1);
   } finally {
     await prisma.$disconnect();
+    await pool.end();
   }
 }
 

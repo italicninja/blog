@@ -9,8 +9,21 @@
  * Usage: node scripts/migrate-images-to-metadata.js
  */
 
+require('dotenv').config({ path: '.env.local' });
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { PrismaPg } = require('@prisma/adapter-pg');
+const { Pool } = require('pg');
+
+// Create PostgreSQL connection pool
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_PRISMA_URL,
+});
+
+// Create Prisma adapter for PostgreSQL
+const adapter = new PrismaPg(pool);
+
+// Initialize Prisma Client with adapter
+const prisma = new PrismaClient({ adapter });
 
 // Base URL for UploadThing images
 const UPLOADTHING_BASE_URL = 'https://uploadthing.com/f';
@@ -140,6 +153,7 @@ async function migrateImages() {
     console.error('Error during migration:', error);
   } finally {
     await prisma.$disconnect();
+    await pool.end();
   }
 }
 
