@@ -7,7 +7,6 @@ import slugify from 'slugify';
 import { authOptions } from '@/lib/auth-options';
 import { z } from 'zod';
 import { getGithubLogin, isOwner } from '@/lib/auth-utils';
-import DOMPurify from 'isomorphic-dompurify';
 
 type PostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
