@@ -62,11 +62,10 @@ export async function getAllPostSlugs() {
     where,
     select: { slug: true },
   });
-  
+
+  // Next.js 15 App Router expects just the param objects, not wrapped in 'params'
   return posts.map(post => ({
-    params: {
-      slug: post.slug,
-    },
+    slug: post.slug,
   }));
 }
 
