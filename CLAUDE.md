@@ -15,11 +15,12 @@ This document contains essential guidelines and rules for working on this Next.j
 
 **Italicninja - Adventures in Tech & Automation**
 
-A blog about DevOps, automation, and teaching robots to do my job. Built with Next.js 15 App Router, Prisma (PostgreSQL), NextAuth, UploadThing, and Tailwind CSS. Deployed on Vercel.
+A blog about DevOps, automation, and teaching robots to do my job. Built with Next.js 15 App Router, Prisma (PostgreSQL), NextAuth, UploadThing, and Tailwind CSS. Deployed on Vercel with NeonDB.
 
 ### Key Features
 - GitHub OAuth authentication with custom authorization system
-- Database-backed blog posts with Prisma ORM (PostgreSQL)
+- Database-backed blog posts with Prisma ORM (PostgreSQL via NeonDB)
+- Branch-based database testing with NeonDB's Git integration
 - Permission-based content management (CONTRIBUTOR, EDITOR, ADMIN roles)
 - UploadThing integration for image uploads
 - Responsive design with dark mode support
@@ -51,7 +52,10 @@ export default async function BlogPostPage(
 }
 ```
 
-### Database: Prisma ^7.1.0 (PostgreSQL)
+### Database: Prisma ^7.1.0 (PostgreSQL via NeonDB)
+- **Database Provider**: [NeonDB](https://console.neon.tech/) - Serverless PostgreSQL
+- **Branch-based Databases**: NeonDB automatically creates database branches that mirror GitHub branches
+- **Preview Deployments**: Each Vercel preview deployment uses a separate NeonDB database branch for testing
 - Define schema in `prisma/schema.prisma`
 - Database configuration in `prisma.config.ts` (Prisma 7 requirement)
 - Always run `prisma generate` after schema changes (no longer automatic)
@@ -59,6 +63,13 @@ export default async function BlogPostPage(
 - Implement pagination for large datasets
 - **Uses PostgreSQL with @prisma/adapter-pg** (`POSTGRES_PRISMA_URL` for connection)
 - PostgreSQL full-text search is now stable (no longer a preview feature)
+
+**NeonDB Integration Workflow:**
+1. Push a new Git branch to GitHub
+2. NeonDB automatically creates a matching database branch
+3. Vercel preview deployment connects to the branch database
+4. Test safely without affecting production data
+5. Merge to main → changes apply to production database
 
 **Database Models:**
 - `User` - Stores user info with GitHub OAuth data
@@ -308,6 +319,30 @@ const PostSchema = z.object({
 
 ## ✅ Best Practices
 
+### Development & Deployment Workflow
+
+**Working with NeonDB Branch Databases:**
+1. **Create Feature Branch**: `git checkout -b feature/my-feature`
+2. **Push to GitHub**: NeonDB automatically creates a matching database branch
+3. **Vercel Preview**: Preview deployment automatically connects to the branch database
+4. **Test Safely**: All changes are isolated to the branch database
+5. **Merge**: When PR is merged, changes apply to production database
+6. **Cleanup**: NeonDB automatically removes old branch databases
+
+**Database Schema Changes:**
+1. Update `prisma/schema.prisma`
+2. Run `prisma generate` locally to update types
+3. Create migration: `npx prisma migrate dev --name description`
+4. Push changes to GitHub
+5. NeonDB branch database will apply migrations automatically on preview deployment
+6. After merge, production database receives migrations
+
+**Best Practices:**
+- Always test database migrations on preview deployments before merging
+- Use NeonDB console to inspect branch database state
+- Keep production and branch databases in sync by regularly merging main
+- Never manually modify production database without testing on a branch first
+
 ### Component Architecture
 1. **Server Components First**: Default to server components for data fetching
 2. **Clear Separation**: Mark client components with `"use client"` directive
@@ -431,14 +466,21 @@ npm run test:css               # CSS regression testing
 
 ### Environment Variables
 Required environment variables (see `.env.example`):
-- `POSTGRES_PRISMA_URL` - PostgreSQL connection string (used by Prisma 7 adapter)
-- `POSTGRES_URL_NON_POOLING` - PostgreSQL direct connection (for migrations only)
+- `POSTGRES_PRISMA_URL` - NeonDB connection string with pooling (used by Prisma 7 adapter)
+- `POSTGRES_URL_NON_POOLING` - NeonDB direct connection (for migrations only)
 - `GITHUB_ID` - GitHub OAuth client ID
 - `GITHUB_SECRET` - GitHub OAuth client secret
 - `NEXTAUTH_SECRET` - NextAuth secret key
 - `NEXTAUTH_URL` - Base URL for NextAuth
 - `UPLOADTHING_SECRET` - UploadThing secret
 - `UPLOADTHING_APP_ID` - UploadThing app ID
+
+**NeonDB Configuration:**
+- NeonDB provides both pooled and direct connection strings
+- Pooled connection (`POSTGRES_PRISMA_URL`) is used for application queries
+- Direct connection (`POSTGRES_URL_NON_POOLING`) is used for Prisma migrations
+- Branch databases automatically receive their own connection strings
+- Vercel automatically injects the correct database URL based on Git branch
 
 **Note**: Prisma 7 uses `prisma.config.ts` to load environment variables via `dotenv`.
 
@@ -461,6 +503,8 @@ Required environment variables (see `.env.example`):
 4. **Check Permissions**: Log output of `isAuthorizedPoster()` and `hasPermission()`
 5. **Check Images**: Use `getImageUrl()` and check browser Network tab for 404s
 6. **Database Issues**: Check connection strings and run `prisma generate`
+7. **NeonDB Branch**: Verify you're using the correct database branch in [NeonDB Console](https://console.neon.tech/)
+8. **Preview Deployments**: Check Vercel deployment logs to see which NeonDB branch is being used
 
 ---
 
