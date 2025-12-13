@@ -205,7 +205,7 @@ export default function AuthorizedPostersPage() {
                     <li key={poster.id} className="py-4 flex items-center justify-between">
                       <div>
                         <p className="font-medium">{poster.githubLogin}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-gray-500 dark:text-gray-400" suppressHydrationWarning>
                           Added on {new Date(poster.createdAt).toLocaleDateString()}
                         </p>
                       </div>

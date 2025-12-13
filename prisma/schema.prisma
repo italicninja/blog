@@ -83,6 +83,7 @@ model Post {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   publishedAt    DateTime?
+  editedAt       DateTime?   // Timestamp for when post was last edited
   authorId       String
   author         User        @relation(fields: [authorId], references: [id])
   tags           Tag[]       @relation("PostToTag")

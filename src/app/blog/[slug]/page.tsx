@@ -9,6 +9,11 @@ import type { Metadata, ResolvingMetadata } from "next";
 import PostContent from "./post-content";
 import { Suspense } from "react";
 import { getImageUrl, isValidImageData } from "@/lib/uploadthing-utils";
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth-options';
+import { getGithubLogin, isOwner } from '@/lib/auth-utils';
+import { hasPermission } from '@/lib/authorized-posters';
+import prisma from '@/lib/prisma';
 
 // Default fallback image path
 const DEFAULT_FALLBACK_IMAGE = '/images/posts/nextjs.jpg';
@@ -64,21 +69,17 @@ type Params = {
   slug: string;
 };
 
-// Define custom types that satisfy both the Promise interface and have the required properties
-type ParamsWithPromise = Promise<Params> & Params;
-
 type SearchParams = { [key: string]: string | string[] | undefined };
-type SearchParamsWithPromise = Promise<SearchParams> & SearchParams;
 
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: { params: ParamsWithPromise },
+  { params }: { params: Promise<Params> },
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const slug = params.slug;
+  const { slug } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -102,16 +103,50 @@ export async function generateMetadata(
 }
 
 type PageProps = {
-  params: ParamsWithPromise;
-  searchParams?: SearchParamsWithPromise;
+  params: Promise<Params>;
+  searchParams?: Promise<SearchParams>;
 }
 
-export default async function BlogPostPage({ params, searchParams }: PageProps) {
-  const slug = params.slug;
+export default async function BlogPostPage({ params }: PageProps) {
+  const { slug } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
     notFound();
+  }
+
+  // Check if user can edit this post
+  const session = await getServerSession(authOptions);
+  let canEdit = false;
+
+  if (session) {
+    const githubLogin = getGithubLogin(session.user);
+
+    // Get the full post from database to check author
+    const dbPost = await prisma.post.findUnique({
+      where: { slug },
+      include: { author: true },
+    });
+
+    if (dbPost) {
+      // Check if the user is the author or has edit permission
+      const isAuthor = dbPost.author ?
+        (dbPost.author.githubLogin === githubLogin || dbPost.author.name === githubLogin) :
+        false;
+      const isOwnerUser = isOwner(githubLogin);
+
+      canEdit = isAuthor || isOwnerUser;
+
+      // If not author or owner, check for edit permission
+      if (!canEdit) {
+        try {
+          canEdit = await hasPermission(githubLogin, 'edit');
+        } catch (error) {
+          console.error('Error checking edit permission:', error);
+          canEdit = false;
+        }
+      }
+    }
   }
 
   // Get related posts - first try posts with the same tag, then fall back to recent posts
@@ -144,38 +179,62 @@ export default async function BlogPostPage({ params, searchParams }: PageProps) 
       <Header />
       
       <main className="min-h-screen">
-        <article className="container mx-auto px-4 py-16 md:py-24">
+        <article className="container mx-auto px-4 py-12 md:py-16">
           <div className="max-w-3xl mx-auto">
             {/* Post Header */}
-            <header className="mb-12">
-              <div className="mb-4 flex items-center">
-                <time className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase" dateTime={post.date}>
-                  {formatDate(post.date)}
-                </time>
-                {post.author && (
-                  <div className="ml-4 flex items-center">
-                    <span className="text-gray-400 mx-2">•</span>
-                    <div className="flex items-center">
-                      {post.author.image && (
-                        <Image
-                          src={post.author.image}
-                          alt={post.author.name || "Author"}
-                          width={24}
-                          height={24}
-                          className="rounded-full mr-2"
-                        />
-                      )}
-                      <span className="text-sm text-gray-600 dark:text-gray-300">
-                        {post.author.name}
-                      </span>
+            <header className="mb-8">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <time className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase" dateTime={post.date}>
+                    {formatDate(post.date)}
+                  </time>
+                  {post.author && (
+                    <div className="ml-4 flex items-center">
+                      <span className="text-gray-400 mx-2">•</span>
+                      <div className="flex items-center">
+                        {post.author.image && (
+                          <Image
+                            src={post.author.image}
+                            alt={post.author.name || "Author"}
+                            width={24}
+                            height={24}
+                            className="rounded-full mr-2"
+                          />
+                        )}
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          {post.author.name}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                </div>
+                {canEdit && (
+                  <Link
+                    href={`/blog/${post.slug}/edit`}
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    Edit Post
+                  </Link>
                 )}
               </div>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
                 {post.title}
               </h1>
-              <div className="flex flex-wrap gap-2 mb-10">
+              <div className="flex flex-wrap gap-2 mb-6">
                 {post.tags.map((tag) => (
                   <Link
                     key={tag}
@@ -187,7 +246,7 @@ export default async function BlogPostPage({ params, searchParams }: PageProps) 
                 ))}
               </div>
               {post.coverImage && (
-                <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden mb-12">
+                <div className="relative aspect-[21/9] w-full rounded-lg overflow-hidden mb-8">
                   <SafeImage
                     src={post.coverImage}
                     alt={post.title}
@@ -204,9 +263,18 @@ export default async function BlogPostPage({ params, searchParams }: PageProps) 
             <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-medium prose-headings:tracking-tight prose-a:text-accent prose-a:no-underline hover:prose-a:text-accent-light prose-a:transition-colors prose-img:rounded-md">
               <PostContent content={post.content} />
             </div>
-            
+
+            {/* Edited timestamp */}
+            {post.editedAt && (
+              <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                  Last edited on {formatDate(post.editedAt)}
+                </p>
+              </div>
+            )}
+
             {/* Post Footer */}
-            <div className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-800">
+            <div className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-800">
               <div className="flex items-center justify-between">
                 <Link
                   href="/blog"
@@ -258,9 +326,9 @@ export default async function BlogPostPage({ params, searchParams }: PageProps) 
 
           {/* Related Posts */}
           {relatedPosts.length > 0 && (
-            <div className="max-w-7xl mx-auto mt-24 mb-12">
-              <h2 className="text-2xl font-medium tracking-tight text-foreground mb-12">More posts</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="max-w-7xl mx-auto mt-16 mb-8">
+              <h2 className="text-xl font-medium tracking-tight text-foreground mb-6">More posts</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {relatedPosts.map((relatedPost) => (
                   <article key={relatedPost.slug} className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-200 hover:shadow-medium">
                     <div className="relative aspect-[16/9] w-full overflow-hidden">
@@ -272,18 +340,18 @@ export default async function BlogPostPage({ params, searchParams }: PageProps) 
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
-                    <div className="flex flex-col flex-grow p-6">
-                      <div className="mb-3">
+                    <div className="flex flex-col flex-grow p-4">
+                      <div className="mb-2">
                         <time dateTime={relatedPost.date} className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase">
                           {formatDate(relatedPost.date)}
                         </time>
                       </div>
                       <Link href={`/blog/${relatedPost.slug}`} className="group-hover:underline decoration-1 underline-offset-2">
-                        <h3 className="text-xl font-medium tracking-tight text-foreground mb-3 line-clamp-2">
+                        <h3 className="text-lg font-medium tracking-tight text-foreground mb-2 line-clamp-2">
                           {relatedPost.title}
                         </h3>
                       </Link>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2 flex-grow">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 flex-grow">
                         {relatedPost.excerpt}
                       </p>
                       <Link

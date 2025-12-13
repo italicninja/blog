@@ -8,13 +8,14 @@ import {
 } from '@/lib/authorized-posters';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth-options';
+import { getGithubLogin, isOwner } from '@/lib/auth-utils';
 
 // Helper function to check if the current user is an admin
 async function isAdmin(githubLogin: string): Promise<boolean> {
   if (!githubLogin) return false;
-  
-  // Special case for italicninja - always grant admin access
-  if (githubLogin === 'italicninja') return true;
+
+  // Special case for blog owner - always grant admin access
+  if (isOwner(githubLogin)) return true;
 
   try {
     // First check if the user is authorized
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const githubLogin = session.user.githubLogin || session.user.name || '';
+    const githubLogin = getGithubLogin(session.user);
     
     // Check if the user is an admin
     if (!githubLogin || !(await isAdmin(githubLogin))) {

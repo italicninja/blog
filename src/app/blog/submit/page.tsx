@@ -27,19 +27,19 @@ export default async function SubmitBlogPage() {
       <Header />
       
       <main className="min-h-screen">
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <div className="container mx-auto px-4 py-12 md:py-16">
           <div className="max-w-3xl mx-auto">
-            <div className="mb-12">
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 drop-shadow-sm text-center">
+            <div className="mb-8">
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 drop-shadow-sm text-center">
                 Submit a Blog Post
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto text-center leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto text-center leading-relaxed">
                 Share your thoughts with the world.
               </p>
             </div>
             
             {!isAuthorized ? (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 text-center">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-center">
                 <h3 className="text-lg font-medium text-yellow-800 dark:text-yellow-200 mb-2">
                   Not Authorized
                 </h3>

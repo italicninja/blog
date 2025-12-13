@@ -6,6 +6,7 @@ import { Prisma, Post } from '@prisma/client';
 import slugify from 'slugify';
 import { authOptions } from '@/lib/auth-options';
 import { z } from 'zod';
+import { getGithubLogin, isOwner } from '@/lib/auth-utils';
 
 type PostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
@@ -17,6 +18,24 @@ const PostSchema = z.object({
   coverImage: z.string().url('Cover image must be a valid URL').optional().or(z.literal('')),
   tags: z.array(z.string().max(30, 'Tags must be less than 30 characters')).max(10, 'Maximum of 10 tags allowed'),
 });
+
+/**
+ * Sanitize content to remove potentially dangerous HTML/scripts
+ * This is a server-side defense-in-depth measure
+ */
+function sanitizeContent(content: string): string {
+  // Remove dangerous tags and attributes
+  // Note: Content is Markdown, so we're being aggressive here
+  return content
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '') // Remove event handlers
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/data:text\/html/gi, ''); // Remove data URIs
+}
 
 // Helper function to generate a unique slug
 async function generateUniqueSlug(title: string): Promise<string> {
@@ -51,11 +70,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const githubLogin = session.user.githubLogin || session.user.name || '';
-    
-    // Special case for italicninja - always authorized
-    if (githubLogin === 'italicninja') {
-      // Continue with the request - italicninja is always authorized
+    const githubLogin = getGithubLogin(session.user);
+
+    // Special case for blog owner - always authorized
+    if (isOwner(githubLogin)) {
+      // Continue with the request - blog owner is always authorized
     } else {
       // Check if the user is authorized to post and has publishing permission
       const isAuthorized = await isAuthorizedPoster(githubLogin);
@@ -103,8 +122,13 @@ export async function POST(request: NextRequest) {
     
     const { title, content, excerpt, coverImage, tags } = validationResult.data;
 
+    // Sanitize content and excerpt to prevent XSS attacks
+    const sanitizedContent = sanitizeContent(content);
+    const sanitizedExcerpt = excerpt ? sanitizeContent(excerpt) : null;
+    const sanitizedTitle = sanitizeContent(title);
+
     // Generate a unique slug for the post
-    const slug = await generateUniqueSlug(title);
+    const slug = await generateUniqueSlug(sanitizedTitle);
     
     // Find or create the user
     let user = await prisma.user.findFirst({
@@ -143,10 +167,10 @@ export async function POST(request: NextRequest) {
     
     // Create the post with proper relations
     const postData = {
-      title,
+      title: sanitizedTitle,
       slug,
-      content,
-      excerpt: excerpt || null,
+      content: sanitizedContent,
+      excerpt: sanitizedExcerpt,
       coverImage: coverImage || null,
       status: 'PUBLISHED',
       publishedAt: new Date(),
@@ -296,10 +320,10 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const githubLogin = session.user.githubLogin || session.user.name || '';
+    const githubLogin = getGithubLogin(session.user);
 
-    // Special case for italicninja - always authorized
-    if (githubLogin !== 'italicninja') {
+    // Special case for blog owner - always authorized
+    if (!isOwner(githubLogin)) {
       // Check if the user has delete permission
       try {
         const canDelete = await hasPermission(githubLogin, 'delete');
@@ -358,7 +382,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Get the GitHub login from the session
-    const githubLogin = session.user.githubLogin || session.user.name || '';
+    const githubLogin = getGithubLogin(session.user);
 
     // Parse the request body
     const body = await request.json();
@@ -387,7 +411,7 @@ export async function PATCH(request: NextRequest) {
     // Check if the user is the author or has edit permission
     const isAuthor = post.author.githubLogin === githubLogin || post.author.name === githubLogin;
 
-    if (!isAuthor && githubLogin !== 'italicninja') {
+    if (!isAuthor && !isOwner(githubLogin)) {
       try {
         const canEdit = await hasPermission(githubLogin, 'edit');
         if (!canEdit) {
@@ -438,6 +462,7 @@ export async function PATCH(request: NextRequest) {
         ...updateData,
         ...(tagConnections ? { tags: tagConnections } : {}),
         updatedAt: new Date(),
+        editedAt: new Date(), // Set the edited timestamp
       },
       include: {
         author: {

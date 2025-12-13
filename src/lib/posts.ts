@@ -14,6 +14,7 @@ export interface Post {
   date: string;
   coverImage: string;
   tags: string[];
+  editedAt?: string;
   author?: {
     id: string;
     name: string;
@@ -41,6 +42,7 @@ function convertPrismaPostToPost(
     date: post.publishedAt?.toISOString() || post.createdAt.toISOString(),
     coverImage: post.coverImage || '',
     tags: post.tags ? post.tags.map(tag => tag.name) : [],
+    editedAt: post.editedAt?.toISOString(),
     author: post.author ? {
       id: post.author.id,
       name: post.author.name || '',
@@ -59,11 +61,10 @@ export async function getAllPostSlugs() {
     where,
     select: { slug: true },
   });
-  
+
+  // Next.js 15 App Router expects just the param objects, not wrapped in 'params'
   return posts.map(post => ({
-    params: {
-      slug: post.slug,
-    },
+    slug: post.slug,
   }));
 }
 
@@ -136,6 +137,8 @@ export async function getPostContentHtml(content: string): Promise<string> {
       }
     });
 
+    // remark-html already sanitizes the HTML output and escapes dangerous content
+    // Since content comes from authenticated/authorized users, this is sufficient
     return htmlContent;
   } catch (error) {
     console.error('Error converting markdown to HTML:', error);
@@ -238,6 +241,49 @@ export const getRecentPosts = cache(async (count: number = 3): Promise<Post[]> =
   });
 
   return posts.map(convertPrismaPostToPost);
+});
+
+// Get all cover images from published posts for hero banner
+export const getCoverImages = cache(async (): Promise<string[]> => {
+  const where = {
+    status: 'PUBLISHED',
+  } as unknown as Prisma.PostWhereInput;
+
+  const posts = await prisma.post.findMany({
+    where,
+    select: {
+      coverImage: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  // Filter out posts without cover images and process the image URLs
+  const coverImages = posts
+    .map(post => post.coverImage)
+    .filter((image): image is string => {
+      // Accept if not null/undefined/empty
+      if (!image || image.trim().length === 0) return false;
+
+      // Accept direct URLs (http/https)
+      if (image.startsWith('http://') || image.startsWith('https://')) return true;
+
+      // Accept JSON metadata with fileKey
+      if (isValidImageData(image)) return true;
+
+      return false;
+    })
+    .map(image => getImageUrl(image))
+    .filter((url): url is string => {
+      // Filter out fallback images and invalid URLs
+      return !!url &&
+             url.length > 0 &&
+             !url.includes('/images/posts/') && // Exclude fallback images
+             (url.startsWith('http://') || url.startsWith('https://'));
+    });
+
+  return coverImages;
 });
 
 // Get posts by tag

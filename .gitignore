@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Backups
 backups/backup_*
+
+# Vercel Logs
+.logs/

@@ -1,0 +1,112 @@
+name: Set Expiration for Non-Main Branch Databases
+
+on:
+  # Run daily at midnight
+  schedule:
+    - cron: '0 0 * * *'
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  set-database-expiration:
+    name: Set Expiration for Branch Databases
+    runs-on: ubuntu-latest
+    environment: Production
+
+    # Prevent concurrent runs to avoid race conditions
+    concurrency:
+      group: database-cleanup
+      cancel-in-progress: true
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history to get all branches
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Get active branches
+        id: branches
+        run: |
+          # Get all branches except main/master
+          BRANCHES=$(git branch -r | grep -v "origin/main\|origin/master\|HEAD" | sed 's|origin/||' | xargs echo)
+          echo "ACTIVE_BRANCHES=${BRANCHES}" >> $GITHUB_OUTPUT
+          echo "Active branches: ${BRANCHES}"
+      
+      - name: Install Neon CLI
+        run: npm install -g neonctl
+      
+      - name: Set expiration for non-main branch databases
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          ACTIVE_BRANCHES: ${{ steps.branches.outputs.ACTIVE_BRANCHES }}
+        run: |
+          # Validate required environment variables
+          if [[ -z "$NEON_API_KEY" || -z "$NEON_PROJECT_ID" ]]; then
+            echo "Error: NEON_API_KEY and NEON_PROJECT_ID must be set"
+            exit 1
+          fi
+
+          # Validate jq is installed
+          if ! command -v jq &> /dev/null; then
+            echo "Error: jq is not installed"
+            exit 1
+          fi
+
+          # List all branches in the Neon project
+          echo "Listing all Neon branches..."
+          NEON_BRANCHES=$(neonctl branches list --project-id $NEON_PROJECT_ID --api-key $NEON_API_KEY -o json)
+          
+          # Process each branch
+          echo "$NEON_BRANCHES" | jq -c '.[]' | while read -r branch; do
+            BRANCH_ID=$(echo $branch | jq -r '.id')
+            BRANCH_NAME=$(echo $branch | jq -r '.name')
+            
+            # Skip main branch
+            if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
+              echo "Skipping main branch: $BRANCH_NAME"
+              continue
+            fi
+
+            # Check if branch still exists in git
+            if ! echo "${ACTIVE_BRANCHES}" | grep -q "\b${BRANCH_NAME}\b"; then
+              echo "Branch $BRANCH_NAME no longer exists in git. Setting expiration to 3 days from now..."
+
+              # Calculate expiration date (3 days from now) - portable for Linux
+              EXPIRY_DATE=$(date -u -d "+3 days" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -v +3d "+%Y-%m-%dT%H:%M:%SZ")
+
+              # Set branch to expire
+              if neonctl branches update $BRANCH_ID \
+                --project-id $NEON_PROJECT_ID \
+                --api-key $NEON_API_KEY \
+                --expires-at $EXPIRY_DATE; then
+                echo "✓ Set expiration for branch $BRANCH_NAME to $EXPIRY_DATE"
+              else
+                echo "✗ Failed to set expiration for branch $BRANCH_NAME"
+              fi
+            else
+              echo "Branch $BRANCH_NAME still exists in git. No expiration set."
+            fi
+          done
+      
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Database expiration workflow failed',
+              body: `The database expiration workflow failed on run [${context.runId}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
+            })

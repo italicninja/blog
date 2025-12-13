@@ -40,7 +40,7 @@ Preview deployments on Vercel require:
 ### Production Environment
 
 Production deployment requires:
-- `NEXTAUTH_URL` set to your production URL (e.g., `https://pixel-alpha-flax.vercel.app/`)
+- `NEXTAUTH_URL` set to your production URL (e.g., `https://blog.italicninja.com/`)
 - GitHub OAuth app with callback URL matching your production domain
 
 ## Using the Auth Setup Script
