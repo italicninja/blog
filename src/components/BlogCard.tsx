@@ -39,7 +39,7 @@ export default function BlogCard({ post }: BlogCardProps) {
       </div>
       <div className="flex flex-col flex-grow p-6">
         <div className="mb-3">
-          <time dateTime={post.date} className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase">
+          <time dateTime={post.date} className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase" suppressHydrationWarning>
             {formatDate(post.date)}
           </time>
         </div>

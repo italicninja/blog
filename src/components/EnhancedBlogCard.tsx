@@ -70,7 +70,7 @@ export default function EnhancedBlogCard({ post, index }: EnhancedBlogCardProps)
       
       <div className="flex flex-col flex-grow p-4">
         <div className="mb-2 flex items-center">
-          <time dateTime={post.date} className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase">
+          <time dateTime={post.date} className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase" suppressHydrationWarning>
             {formatDate(post.date)}
           </time>
         </div>
