@@ -43,7 +43,7 @@ export default function Footer() {
                 aria-label={`View commit ${commitInfo.sha.substring(0, 7)}`}
               >
                 <code className="font-mono">{commitInfo.sha.substring(0, 7)}</code>
-                <span className="ml-1">
+                <span className="ml-1" suppressHydrationWarning>
                   {formatDate(commitInfo.commit.author.date)} - { process.env.NODE_ENV }
                 </span>
               </a>
