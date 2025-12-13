@@ -130,7 +130,9 @@ export default async function BlogPostPage({ params }: PageProps) {
 
     if (dbPost) {
       // Check if the user is the author or has edit permission
-      const isAuthor = dbPost.author.githubLogin === githubLogin || dbPost.author.name === githubLogin;
+      const isAuthor = dbPost.author ?
+        (dbPost.author.githubLogin === githubLogin || dbPost.author.name === githubLogin) :
+        false;
       const isOwnerUser = isOwner(githubLogin);
 
       canEdit = isAuthor || isOwnerUser;
