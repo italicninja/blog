@@ -51,13 +51,14 @@ export default async function BlogPostPage(
 }
 ```
 
-### Database: Prisma ^6.11.0 (PostgreSQL)
+### Database: Prisma ^7.1.0 (PostgreSQL)
 - Define schema in `prisma/schema.prisma`
-- Always run `prisma generate` after schema changes
+- Database configuration in `prisma.config.ts` (Prisma 7 requirement)
+- Always run `prisma generate` after schema changes (no longer automatic)
 - Use type-safe queries with proper error handling
 - Implement pagination for large datasets
-- **Uses PostgreSQL with connection pooling** (`POSTGRES_PRISMA_URL` and `POSTGRES_URL_NON_POOLING`)
-- Preview feature enabled: `fullTextSearchPostgres`
+- **Uses PostgreSQL with @prisma/adapter-pg** (`POSTGRES_PRISMA_URL` for connection)
+- PostgreSQL full-text search is now stable (no longer a preview feature)
 
 **Database Models:**
 - `User` - Stores user info with GitHub OAuth data
@@ -98,6 +99,50 @@ import { cache } from 'react';
 export const getPostBySlug = cache(async (slug: string) => {
   // ...
 });
+```
+
+**Prisma 7 Client Initialization (with Database Adapter):**
+```typescript
+import { PrismaClient } from '@prisma/client';
+
+// Lazy initialization with dynamic imports to avoid bundling pg for client
+function createPrismaClient() {
+  if (typeof window === 'undefined') {
+    const { PrismaPg } = require('@prisma/adapter-pg');
+    const { Pool } = require('pg');
+
+    const pool = new Pool({
+      connectionString: process.env.POSTGRES_PRISMA_URL,
+    });
+
+    const adapter = new PrismaPg(pool);
+    return new PrismaClient({ adapter });
+  }
+
+  return new PrismaClient();
+}
+
+export const prisma = createPrismaClient();
+```
+
+**Standalone Script Pattern (Prisma 7):**
+```javascript
+const { PrismaClient } = require('@prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_PRISMA_URL,
+});
+
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
+// Don't forget to clean up!
+async function cleanup() {
+  await prisma.$disconnect();
+  await pool.end();
+}
 ```
 
 ### Authentication: NextAuth ^4.24.5
@@ -280,7 +325,7 @@ src/
 │   └── auth/        # Auth pages
 ├── components/       # Reusable React components
 ├── lib/             # Utility functions and services
-│   ├── prisma.ts           # Prisma client singleton
+│   ├── prisma.ts           # Prisma client singleton (with adapter)
 │   ├── posts.ts            # Post data fetching (with cache)
 │   ├── auth-options.ts     # NextAuth config
 │   ├── auth-utils.ts       # Auth helper functions
@@ -289,15 +334,19 @@ src/
 │   └── uploadthing-utils.ts # Image URL processing
 ├── utils/           # General utilities (date formatting, etc.)
 └── styles/          # Global styles
+
+prisma.config.ts     # Prisma 7 database configuration
+prisma/
+└── schema.prisma    # Database schema definition
 ```
 
 ### Performance
 - **Use React's `cache()`**: Wrap data-fetching functions (see `src/lib/posts.ts`)
 - **Next.js Image**: Always use `<Image>` component with proper `sizes` prop
 - **Database Select**: Only fetch needed fields with Prisma `select`
-- **Connection Pooling**: Uses `POSTGRES_PRISMA_URL` for pooling
+- **Database Adapter**: Uses `@prisma/adapter-pg` with connection pooling via `pg` Pool
 - **Indexes**: Posts table has indexes on `slug`, `status`, `authorId`, `title`
-- **Code Splitting**: Dynamic imports for heavy client components
+- **Code Splitting**: Dynamic imports for heavy client components (including database adapter)
 
 ### Security
 - **Never expose Prisma Client to the client** - All DB access through API routes or server components
@@ -317,13 +366,16 @@ src/
 - ❌ Forgetting to configure image domains in `next.config.js`
 - ❌ Using client-side navigation (`<Link>`) for external links (use `<a>` instead)
 
-### Prisma & Database
-- ❌ Not running `prisma generate` after schema changes
+### Prisma 7 & Database
+- ❌ Not running `prisma generate` after schema changes (no longer runs automatically!)
 - ❌ Forgetting type assertions for Prisma enums: `as unknown as Prisma.PostWhereInput`
 - ❌ Not handling nullable fields (e.g., `post.author?.name`)
 - ❌ Using raw SQL without parameterization (use `$queryRaw` with template literals)
 - ❌ Not using `cache()` for repeated data fetching
 - ❌ Exposing Prisma Client in client components
+- ❌ Importing `pg` or `@prisma/adapter-pg` in client-side code (use dynamic imports in `prisma.ts`)
+- ❌ Forgetting to configure database URL in `prisma.config.ts`
+- ❌ Not using database adapter pattern in standalone scripts
 
 ### Authentication & Authorization
 - ❌ Not checking `isAuthorizedPoster()` before allowing post creation
@@ -379,14 +431,16 @@ npm run test:css               # CSS regression testing
 
 ### Environment Variables
 Required environment variables (see `.env.example`):
-- `POSTGRES_PRISMA_URL` - PostgreSQL connection string (pooled)
-- `POSTGRES_URL_NON_POOLING` - PostgreSQL direct connection
+- `POSTGRES_PRISMA_URL` - PostgreSQL connection string (used by Prisma 7 adapter)
+- `POSTGRES_URL_NON_POOLING` - PostgreSQL direct connection (for migrations only)
 - `GITHUB_ID` - GitHub OAuth client ID
 - `GITHUB_SECRET` - GitHub OAuth client secret
 - `NEXTAUTH_SECRET` - NextAuth secret key
 - `NEXTAUTH_URL` - Base URL for NextAuth
 - `UPLOADTHING_SECRET` - UploadThing secret
 - `UPLOADTHING_APP_ID` - UploadThing app ID
+
+**Note**: Prisma 7 uses `prisma.config.ts` to load environment variables via `dotenv`.
 
 ### Database Enums
 - `PermissionLevel`: `CONTRIBUTOR`, `EDITOR`, `ADMIN`
@@ -397,7 +451,7 @@ Required environment variables (see `.env.example`):
 - **Dev Mode**: Auto-authenticates as "developer" in development
 - **Soft Deletes**: Posts use `isDeleted` flag instead of hard deletion
 - **Post Versioning**: Support for `previousVersion` and `nextVersion` tracking
-- **Full-Text Search**: PostgreSQL full-text search enabled (preview feature)
+- **Full-Text Search**: PostgreSQL full-text search is now stable in Prisma 7
 
 ## 🔍 Debugging Tips
 
