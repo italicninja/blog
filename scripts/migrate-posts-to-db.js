@@ -12,9 +12,20 @@ const fs = require('fs');
 const path = require('path');
 const matter = require('gray-matter');
 const { PrismaClient } = require('@prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
+const { Pool } = require('pg');
 const slugify = require('slugify');
 
-const prisma = new PrismaClient();
+// Create PostgreSQL connection pool
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_PRISMA_URL,
+});
+
+// Create Prisma adapter for PostgreSQL
+const adapter = new PrismaPg(pool);
+
+// Initialize Prisma Client with adapter
+const prisma = new PrismaClient({ adapter });
 const postsDirectory = path.join(process.cwd(), 'src/posts');
 
 // Default author information (can be customized)
@@ -213,6 +224,7 @@ async function migratePostsToDatabase() {
     console.error('Error during migration:', error);
   } finally {
     await prisma.$disconnect();
+    await pool.end();
   }
 }
 

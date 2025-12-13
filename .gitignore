@@ -41,6 +41,11 @@ yarn-error.log*
 next-env.d.ts
 .env*.local
 
+# Prisma 7 - Generated client now outputs to src/ instead of node_modules
+# Note: Prisma will generate to src/.prisma/client by default
+# We commit this to the repo as it's now part of source code
+# src/.prisma/
+
 # Backups
 backups/backup_*
 

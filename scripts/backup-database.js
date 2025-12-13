@@ -1,8 +1,19 @@
 require('dotenv').config({ path: '.env.local' });
 const { PrismaClient } = require('@prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
+const { Pool } = require('pg');
 const fs = require('fs/promises');
 
-const prisma = new PrismaClient();
+// Create PostgreSQL connection pool
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_PRISMA_URL,
+});
+
+// Create Prisma adapter for PostgreSQL
+const adapter = new PrismaPg(pool);
+
+// Initialize Prisma Client with adapter
+const prisma = new PrismaClient({ adapter });
 
 // Verify that the environment variable is loaded
 console.log('Database URL:', process.env.POSTGRES_PRISMA_URL);
@@ -48,4 +59,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });
