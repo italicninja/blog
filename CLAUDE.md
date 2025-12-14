@@ -11,6 +11,29 @@ This document contains essential guidelines and rules for working on this Next.j
 - The build process includes Prisma schema generation (`prisma generate && next build`)
 - Pay attention to warnings/errors and address them
 
+### Dependency Updates & Security Patches
+**ALWAYS create a new branch when doing dependency updates**
+- Never update dependencies directly on `main` branch
+- Create feature branches for security patches (e.g., `update-react-security-patch`)
+- Update to latest patch versions for security fixes
+- Run `npm run build` to verify compatibility after updates
+- Test thoroughly before merging to main
+
+**Security Update Workflow:**
+1. Create a new branch: `git checkout -b update-<package>-security-patch`
+2. Update the dependency: `npm update <package>` or `npm install <package>@latest`
+3. Check for breaking changes in release notes
+4. Run `npm run build` to verify the build succeeds
+5. Test the application locally to ensure functionality
+6. Commit changes and push to GitHub for preview deployment testing
+7. Merge to main after successful testing
+
+**Important Notes:**
+- Keep React and Next.js versions in sync (both should be on latest stable)
+- Security patches should be prioritized and applied promptly
+- Minor version updates may include breaking changes - review carefully
+- Major version updates require thorough testing and may need code changes
+
 ## 📋 Project Overview
 
 **Italicninja - Adventures in Tech & Automation**
