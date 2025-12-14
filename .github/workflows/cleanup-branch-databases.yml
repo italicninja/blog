@@ -1,9 +1,12 @@
 name: Set Expiration for Non-Main Branch Databases
 
 on:
-  # Run daily at midnight
+  # Run daily at midnight (for cleanup of any missed branches)
   schedule:
     - cron: '0 0 * * *'
+  # Trigger on PR close/merge for immediate cleanup
+  pull_request:
+    types: [closed]
   # Allow manual trigger
   workflow_dispatch:
 
@@ -43,8 +46,34 @@ jobs:
       
       - name: Install Neon CLI
         run: npm install -g neonctl
-      
+
+      - name: Delete database for merged PR branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          echo "PR was merged. Deleting NeonDB branch: $BRANCH_NAME"
+
+          # Find the branch ID by name
+          BRANCH_ID=$(neonctl branches list --project-id $NEON_PROJECT_ID --api-key $NEON_API_KEY -o json | jq -r ".[] | select(.name == \"$BRANCH_NAME\") | .id")
+
+          if [[ -z "$BRANCH_ID" ]]; then
+            echo "No NeonDB branch found with name: $BRANCH_NAME (may have already been deleted)"
+            exit 0
+          fi
+
+          # Delete the branch
+          if neonctl branches delete $BRANCH_ID --project-id $NEON_PROJECT_ID --api-key $NEON_API_KEY; then
+            echo "✓ Successfully deleted NeonDB branch: $BRANCH_NAME (ID: $BRANCH_ID)"
+          else
+            echo "✗ Failed to delete NeonDB branch: $BRANCH_NAME"
+            exit 1
+          fi
+
       - name: Set expiration for non-main branch databases
+        if: github.event_name != 'pull_request'
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
