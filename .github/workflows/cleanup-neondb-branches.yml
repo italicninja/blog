@@ -52,18 +52,22 @@ jobs:
         run: |
           echo "============================================"
           echo "IMMEDIATE CLEANUP MODE"
-          echo "PR was merged. Deleting NeonDB branch: $BRANCH_NAME"
+          echo "PR was merged. Git branch: $BRANCH_NAME"
           echo "============================================"
+
+          # NeonDB branches are prefixed with "preview/"
+          NEON_BRANCH_NAME="preview/$BRANCH_NAME"
+          echo "Looking for NeonDB branch: $NEON_BRANCH_NAME"
 
           # Find the NeonDB branch ID by matching the branch name
           BRANCH_ID=$(neonctl branches list \
             --project-id $NEON_PROJECT_ID \
             --api-key $NEON_API_KEY \
-            -o json | jq -r ".[] | select(.name == \"$BRANCH_NAME\") | .id")
+            -o json | jq -r ".[] | select(.name == \"$NEON_BRANCH_NAME\") | .id")
 
           # Exit gracefully if branch doesn't exist (may have been manually deleted)
           if [[ -z "$BRANCH_ID" ]]; then
-            echo "⚠️  No NeonDB branch found with name: $BRANCH_NAME"
+            echo "⚠️  No NeonDB branch found with name: $NEON_BRANCH_NAME"
             echo "   (Branch may have already been deleted or never existed)"
             exit 0
           fi
@@ -73,9 +77,9 @@ jobs:
           if neonctl branches delete $BRANCH_ID \
             --project-id $NEON_PROJECT_ID \
             --api-key $NEON_API_KEY; then
-            echo "✅ Successfully deleted NeonDB branch: $BRANCH_NAME (ID: $BRANCH_ID)"
+            echo "✅ Successfully deleted NeonDB branch: $NEON_BRANCH_NAME (ID: $BRANCH_ID)"
           else
-            echo "❌ Failed to delete NeonDB branch: $BRANCH_NAME"
+            echo "❌ Failed to delete NeonDB branch: $NEON_BRANCH_NAME"
             exit 1
           fi
 
@@ -137,9 +141,16 @@ jobs:
               continue
             fi
 
-            # Check if the Git branch still exists
-            if ! echo "${ACTIVE_BRANCHES}" | grep -q "\b${BRANCH_NAME}\b"; then
-              echo "🗑️  Branch '$BRANCH_NAME' no longer exists in Git"
+            # NeonDB branches are prefixed with "preview/" - strip prefix for Git comparison
+            GIT_BRANCH_NAME="$BRANCH_NAME"
+            if [[ "$BRANCH_NAME" == preview/* ]]; then
+              GIT_BRANCH_NAME="${BRANCH_NAME#preview/}"
+              echo "Checking NeonDB branch '$BRANCH_NAME' (Git branch: '$GIT_BRANCH_NAME')..."
+            fi
+
+            # Check if the corresponding Git branch still exists
+            if ! echo "${ACTIVE_BRANCHES}" | grep -q "\b${GIT_BRANCH_NAME}\b"; then
+              echo "🗑️  Git branch '$GIT_BRANCH_NAME' no longer exists (NeonDB branch: '$BRANCH_NAME')"
               echo "   Setting expiration to 3 days from now..."
 
               # Calculate expiration date (3 days from now)
@@ -157,7 +168,7 @@ jobs:
                 echo "   ❌ Failed to set expiration for '$BRANCH_NAME'"
               fi
             else
-              echo "✓ Branch '$BRANCH_NAME' still active in Git (no action needed)"
+              echo "✓ Git branch '$GIT_BRANCH_NAME' still active (NeonDB branch: '$BRANCH_NAME' - no action needed)"
             fi
           done
 
