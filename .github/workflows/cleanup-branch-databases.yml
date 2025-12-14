@@ -1,78 +1,106 @@
-name: Set Expiration for Non-Main Branch Databases
+name: NeonDB Branch Cleanup
 
 on:
-  # Run daily at midnight (for cleanup of any missed branches)
-  schedule:
-    - cron: '0 0 * * *'
-  # Trigger on PR close/merge for immediate cleanup
+  # Immediate cleanup: Trigger when a PR is closed (merged or not)
   pull_request:
     types: [closed]
-  # Allow manual trigger
+  # Scheduled cleanup: Run daily at midnight to catch any orphaned branches
+  schedule:
+    - cron: '0 0 * * *'
+  # Manual trigger: Allow running the workflow on demand
   workflow_dispatch:
 
 jobs:
-  set-database-expiration:
-    name: Set Expiration for Branch Databases
+  cleanup-database-branches:
+    name: Cleanup NeonDB Branch Databases
     runs-on: ubuntu-latest
     environment: Production
 
+    # Required permissions
+    permissions:
+      contents: read    # Read repository branches
+      issues: write     # Create issues on failure
+
     # Prevent concurrent runs to avoid race conditions
     concurrency:
-      group: database-cleanup
+      group: neondb-cleanup
       cancel-in-progress: true
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history to get all branches
-      
+          fetch-depth: 0  # Fetch all history to access all branches
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Get active branches
-        id: branches
-        run: |
-          # Get all branches except main/master
-          BRANCHES=$(git branch -r | grep -v "origin/main\|origin/master\|HEAD" | sed 's|origin/||' | xargs echo)
-          echo "ACTIVE_BRANCHES=${BRANCHES}" >> $GITHUB_OUTPUT
-          echo "Active branches: ${BRANCHES}"
-      
+
       - name: Install Neon CLI
         run: npm install -g neonctl
 
-      - name: Delete database for merged PR branch
+      # ========================================
+      # IMMEDIATE CLEANUP (on PR merge)
+      # ========================================
+      - name: Delete NeonDB branch for merged PR
         if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
           BRANCH_NAME: ${{ github.head_ref }}
         run: |
+          echo "============================================"
+          echo "IMMEDIATE CLEANUP MODE"
           echo "PR was merged. Deleting NeonDB branch: $BRANCH_NAME"
+          echo "============================================"
 
-          # Find the branch ID by name
-          BRANCH_ID=$(neonctl branches list --project-id $NEON_PROJECT_ID --api-key $NEON_API_KEY -o json | jq -r ".[] | select(.name == \"$BRANCH_NAME\") | .id")
+          # Find the NeonDB branch ID by matching the branch name
+          BRANCH_ID=$(neonctl branches list \
+            --project-id $NEON_PROJECT_ID \
+            --api-key $NEON_API_KEY \
+            -o json | jq -r ".[] | select(.name == \"$BRANCH_NAME\") | .id")
 
+          # Exit gracefully if branch doesn't exist (may have been manually deleted)
           if [[ -z "$BRANCH_ID" ]]; then
-            echo "No NeonDB branch found with name: $BRANCH_NAME (may have already been deleted)"
+            echo "⚠️  No NeonDB branch found with name: $BRANCH_NAME"
+            echo "   (Branch may have already been deleted or never existed)"
             exit 0
           fi
 
-          # Delete the branch
-          if neonctl branches delete $BRANCH_ID --project-id $NEON_PROJECT_ID --api-key $NEON_API_KEY; then
-            echo "✓ Successfully deleted NeonDB branch: $BRANCH_NAME (ID: $BRANCH_ID)"
+          # Delete the NeonDB branch
+          echo "Deleting branch ID: $BRANCH_ID"
+          if neonctl branches delete $BRANCH_ID \
+            --project-id $NEON_PROJECT_ID \
+            --api-key $NEON_API_KEY; then
+            echo "✅ Successfully deleted NeonDB branch: $BRANCH_NAME (ID: $BRANCH_ID)"
           else
-            echo "✗ Failed to delete NeonDB branch: $BRANCH_NAME"
+            echo "❌ Failed to delete NeonDB branch: $BRANCH_NAME"
             exit 1
           fi
 
-      - name: Set expiration for non-main branch databases
+      # ========================================
+      # SCHEDULED CLEANUP (daily at midnight)
+      # ========================================
+      - name: Get active Git branches
+        if: github.event_name != 'pull_request'
+        id: branches
+        run: |
+          echo "============================================"
+          echo "SCHEDULED CLEANUP MODE"
+          echo "Fetching active Git branches..."
+          echo "============================================"
+
+          # Get all remote branches except main/master
+          BRANCHES=$(git branch -r | \
+            grep -v "origin/main\|origin/master\|HEAD" | \
+            sed 's|origin/||' | \
+            xargs echo)
+
+          echo "ACTIVE_BRANCHES=${BRANCHES}" >> $GITHUB_OUTPUT
+          echo "Active branches: ${BRANCHES}"
+
+      - name: Set expiration for orphaned NeonDB branches
         if: github.event_name != 'pull_request'
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
@@ -81,53 +109,66 @@ jobs:
         run: |
           # Validate required environment variables
           if [[ -z "$NEON_API_KEY" || -z "$NEON_PROJECT_ID" ]]; then
-            echo "Error: NEON_API_KEY and NEON_PROJECT_ID must be set"
+            echo "❌ Error: NEON_API_KEY and NEON_PROJECT_ID must be set"
             exit 1
           fi
 
-          # Validate jq is installed
+          # Validate jq is installed (should be pre-installed on ubuntu-latest)
           if ! command -v jq &> /dev/null; then
-            echo "Error: jq is not installed"
+            echo "❌ Error: jq is not installed"
             exit 1
           fi
 
-          # List all branches in the Neon project
-          echo "Listing all Neon branches..."
-          NEON_BRANCHES=$(neonctl branches list --project-id $NEON_PROJECT_ID --api-key $NEON_API_KEY -o json)
-          
-          # Process each branch
+          # List all branches in the NeonDB project
+          echo "Fetching all NeonDB branches..."
+          NEON_BRANCHES=$(neonctl branches list \
+            --project-id $NEON_PROJECT_ID \
+            --api-key $NEON_API_KEY \
+            -o json)
+
+          # Process each NeonDB branch
           echo "$NEON_BRANCHES" | jq -c '.[]' | while read -r branch; do
             BRANCH_ID=$(echo $branch | jq -r '.id')
             BRANCH_NAME=$(echo $branch | jq -r '.name')
-            
-            # Skip main branch
+
+            # Skip production branches (main/master)
             if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
-              echo "Skipping main branch: $BRANCH_NAME"
+              echo "⏭️  Skipping production branch: $BRANCH_NAME"
               continue
             fi
 
-            # Check if branch still exists in git
+            # Check if the Git branch still exists
             if ! echo "${ACTIVE_BRANCHES}" | grep -q "\b${BRANCH_NAME}\b"; then
-              echo "Branch $BRANCH_NAME no longer exists in git. Setting expiration to 3 days from now..."
+              echo "🗑️  Branch '$BRANCH_NAME' no longer exists in Git"
+              echo "   Setting expiration to 3 days from now..."
 
-              # Calculate expiration date (3 days from now) - portable for Linux
-              EXPIRY_DATE=$(date -u -d "+3 days" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -v +3d "+%Y-%m-%dT%H:%M:%SZ")
+              # Calculate expiration date (3 days from now)
+              # Supports both GNU date (Linux) and BSD date (macOS)
+              EXPIRY_DATE=$(date -u -d "+3 days" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
+                           date -u -v +3d "+%Y-%m-%dT%H:%M:%SZ")
 
-              # Set branch to expire
+              # Set the NeonDB branch to expire
               if neonctl branches update $BRANCH_ID \
                 --project-id $NEON_PROJECT_ID \
                 --api-key $NEON_API_KEY \
                 --expires-at $EXPIRY_DATE; then
-                echo "✓ Set expiration for branch $BRANCH_NAME to $EXPIRY_DATE"
+                echo "   ✅ Set expiration for '$BRANCH_NAME' to $EXPIRY_DATE"
               else
-                echo "✗ Failed to set expiration for branch $BRANCH_NAME"
+                echo "   ❌ Failed to set expiration for '$BRANCH_NAME'"
               fi
             else
-              echo "Branch $BRANCH_NAME still exists in git. No expiration set."
+              echo "✓ Branch '$BRANCH_NAME' still active in Git (no action needed)"
             fi
           done
-      
-      - name: Notify on failure
+
+          echo "============================================"
+          echo "Scheduled cleanup complete!"
+          echo "============================================"
+
+      # ========================================
+      # FAILURE NOTIFICATION
+      # ========================================
+      - name: Create GitHub issue on failure
         if: failure()
         uses: actions/github-script@v7
         with:
@@ -136,6 +177,12 @@ jobs:
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: 'Database expiration workflow failed',
-              body: `The database expiration workflow failed on run [${context.runId}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
+              title: '🚨 NeonDB cleanup workflow failed',
+              body: `The NeonDB branch cleanup workflow failed.
+
+              **Workflow Run:** [View logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              **Trigger:** ${context.eventName}
+              **Branch:** ${context.ref}
+
+              Please check the workflow logs to diagnose the issue.`
             })
