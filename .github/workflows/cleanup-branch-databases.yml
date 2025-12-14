@@ -16,6 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production
 
+    # Add permissions for creating issues on failure
+    permissions:
+      contents: read
+      issues: write
+
     # Prevent concurrent runs to avoid race conditions
     concurrency:
       group: database-cleanup
@@ -26,16 +31,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history to get all branches
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
+
       - name: Get active branches
         id: branches
         run: |
