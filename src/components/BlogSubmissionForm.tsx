@@ -5,17 +5,9 @@ import { TagSelector } from '@/components/TagSelector';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
 import { OurUploadDropzone } from '@/components/UploadThingProvider';
 import { imageUrlToMetadata } from '@/lib/uploadthing-utils';
-import '@uiw/react-md-editor/markdown-editor.css';
-import '@uiw/react-markdown-preview/markdown.css';
-
-// Dynamic import for MDEditor to avoid SSR issues
-const MDEditor = dynamic(
-  () => import("@uiw/react-md-editor"),
-  { ssr: false }
-);
+import MarkdownEditor from '@/components/MarkdownEditor';
 
 interface FormData {
   title: string;
@@ -326,29 +318,12 @@ export default function BlogSubmissionForm() {
         </div>
         
         {/* Content */}
-        <div>
-          <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Content (Markdown) *
-          </label>
-          <div data-color-mode="auto">
-            <MDEditor
-              value={formData.content}
-              onChange={(val) => setFormData(prev => ({ ...prev, content: val || '' }))}
-              height={500}
-              preview="live"
-              hideToolbar={false}
-              enableScroll={true}
-              visibleDragbar={true}
-              textareaProps={{
-                placeholder: 'Write your blog post content here using Markdown...',
-                required: true,
-              }}
-            />
-          </div>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            Write using Markdown syntax. The preview shows how your content will look.
-          </p>
-        </div>
+        <MarkdownEditor
+          value={formData.content}
+          onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
+          placeholder="Write your blog post content here using Markdown..."
+          required={true}
+        />
         
         {/* Submit Button */}
         <div>
