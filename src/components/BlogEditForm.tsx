@@ -1,38 +1,12 @@
 "use client";
 
-import { useState, useRef, FormEvent, ChangeEvent, useCallback, useEffect } from 'react';
+import { useState, useRef, FormEvent, ChangeEvent, useCallback } from 'react';
 import { TagSelector } from '@/components/TagSelector';
-
-// Add type definitions for Web Speech API
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  onstart: (event: Event) => void;
-  onerror: (event: SpeechRecognitionErrorEvent) => void;
-  onend: (event: Event) => void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  start: () => void;
-  stop: () => void;
-}
-
-declare global {
-  interface Window {
-    webkitSpeechRecognition: new () => SpeechRecognition;
-    SpeechRecognition: new () => SpeechRecognition;
-  }
-}
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { OurUploadDropzone } from '@/components/UploadThingProvider';
+import MarkdownEditor from '@/components/MarkdownEditor';
 import {
   extractImageReferences,
   filterLocalImages,
@@ -59,10 +33,6 @@ export default function BlogEditForm({ post }: BlogEditFormProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isRecordingSupported, setIsRecordingSupported] = useState(false);
-  const [recordingError, setRecordingError] = useState<string | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -77,58 +47,6 @@ export default function BlogEditForm({ post }: BlogEditFormProps) {
     tags: post.tags || [],
   });
   const formRef = useRef<HTMLFormElement>(null);
-
-  // Initialize speech recognition
-  useEffect(() => {
-    // Check if browser supports speech recognition
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-      const recognition = new SpeechRecognition();
-
-      recognition.continuous = true;
-      recognition.interimResults = true;
-
-      recognition.onstart = () => {
-        setIsRecording(true);
-      };
-
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (event.error === 'not-allowed') {
-          setRecordingError('Microphone permission denied. Please allow microphone access to use voice dictation.');
-        } else {
-          setRecordingError(`Error during voice dictation: ${event.error}`);
-        }
-        setIsRecording(false);
-      };
-
-      recognition.onend = () => {
-        setIsRecording(false);
-      };
-
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0].transcript)
-          .join(' ');
-
-        setFormData(prev => ({
-          ...prev,
-          content: prev.content + (prev.content ? '\n' : '') + transcript
-        }));
-      };
-
-      recognitionRef.current = recognition;
-      setIsRecordingSupported(true);
-    } else {
-      setIsRecordingSupported(false);
-    }
-
-    // Cleanup
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, []);
 
   // Handle form input changes
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -532,67 +450,12 @@ export default function BlogEditForm({ post }: BlogEditFormProps) {
         </div>
 
         {/* Content */}
-        <div>
-          <div className="flex justify-between items-center mb-1">
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Content (Markdown) *
-            </label>
-            {isRecordingSupported && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (isRecording) {
-                    recognitionRef.current?.stop();
-                  } else {
-                    setRecordingError(null);
-                    recognitionRef.current?.start();
-                  }
-                }}
-                className={`flex items-center px-3 py-1 rounded-md text-sm transition-colors ${
-                  isRecording
-                    ? 'bg-red-500 hover:bg-red-600 text-white'
-                    : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900 dark:hover:bg-indigo-800 dark:text-indigo-200'
-                }`}
-                disabled={!isRecordingSupported}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`h-4 w-4 mr-1 ${isRecording ? 'animate-pulse' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                  />
-                </svg>
-                {isRecording ? 'Stop Recording' : 'Start Dictation'}
-              </button>
-            )}
-          </div>
-          {recordingError && (
-            <div className="mb-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400 text-sm">
-              {recordingError}
-            </div>
-          )}
-          <textarea
-            id="content"
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            rows={12}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono"
-            required
-          ></textarea>
-          <div className="mt-1 space-y-2">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              You can use Markdown syntax for formatting.
-            </p>
-          </div>
-        </div>
+        <MarkdownEditor
+          value={formData.content}
+          onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
+          placeholder="Write your blog post content here using Markdown..."
+          required={true}
+        />
 
         {/* Submit Button */}
         <div className="flex gap-4">

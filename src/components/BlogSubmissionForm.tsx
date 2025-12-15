@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { OurUploadDropzone } from '@/components/UploadThingProvider';
 import { imageUrlToMetadata } from '@/lib/uploadthing-utils';
+import MarkdownEditor from '@/components/MarkdownEditor';
 
 interface FormData {
   title: string;
@@ -317,23 +318,12 @@ export default function BlogSubmissionForm() {
         </div>
         
         {/* Content */}
-        <div>
-          <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Content (Markdown) *
-          </label>
-          <textarea
-            id="content"
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            rows={12}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono"
-            required
-          ></textarea>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            You can use Markdown syntax for formatting.
-          </p>
-        </div>
+        <MarkdownEditor
+          value={formData.content}
+          onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
+          placeholder="Write your blog post content here using Markdown..."
+          required={true}
+        />
         
         {/* Submit Button */}
         <div>
