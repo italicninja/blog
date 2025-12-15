@@ -455,7 +455,6 @@ export default function BlogEditForm({ post }: BlogEditFormProps) {
           onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
           placeholder="Write your blog post content here using Markdown..."
           required={true}
-          enableVoiceDictation={true}
         />
 
         {/* Submit Button */}
