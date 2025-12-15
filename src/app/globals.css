@@ -491,3 +491,46 @@ pre code {
     height: 100%;
   }
 }
+
+/* MDEditor custom styling for theme integration */
+.w-md-editor {
+  border-radius: var(--radius-medium) !important;
+  box-shadow: var(--shadow-small) !important;
+  overflow: hidden !important;
+}
+
+.w-md-editor-toolbar {
+  border-bottom: 1px solid var(--gray-200) !important;
+  background: var(--background-secondary) !important;
+}
+
+.w-md-editor-text-pre,
+.w-md-editor-text-input {
+  font-family: var(--font-mono) !important;
+}
+
+.w-md-editor-preview {
+  background: var(--background-secondary) !important;
+}
+
+/* Dark mode adjustments for MDEditor */
+@media (prefers-color-scheme: dark) {
+  .w-md-editor {
+    --color-canvas-default: var(--gray-100);
+    --color-canvas-subtle: var(--gray-50);
+    --color-border-default: var(--gray-200);
+    --color-border-muted: var(--gray-100);
+  }
+
+  .w-md-editor-toolbar {
+    border-bottom-color: var(--gray-200) !important;
+  }
+
+  .w-md-editor-toolbar li > button {
+    color: var(--foreground) !important;
+  }
+
+  .w-md-editor-toolbar li > button:hover {
+    background: var(--gray-100) !important;
+  }
+}
