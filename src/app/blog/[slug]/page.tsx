@@ -231,7 +231,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                   </Link>
                 )}
               </div>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
+              <h1 className="text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-500 drop-shadow-sm">
                 {post.title}
               </h1>
               <div className="flex flex-wrap gap-2 mb-6">
@@ -327,7 +327,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           {/* Related Posts */}
           {relatedPosts.length > 0 && (
             <div className="max-w-7xl mx-auto mt-16 mb-8">
-              <h2 className="text-xl font-medium tracking-tight text-foreground mb-6">More posts</h2>
+              <h2 className="text-2xl font-medium tracking-tight text-foreground mb-6">More posts</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {relatedPosts.map((relatedPost) => (
                   <article key={relatedPost.slug} className="card group flex flex-col overflow-hidden bg-background border border-gray-200 dark:border-gray-800 rounded-lg transition-all duration-200 hover:shadow-medium">

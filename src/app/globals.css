@@ -144,36 +144,65 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.6;
+  /* Fluid base font size: scales from 16px to 18px */
+  font-size: clamp(1rem, 0.875rem + 0.5vw, 1.125rem);
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Typography */
+/* Typography - Fluid scaling with clamp() */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.2;
   margin-bottom: var(--gap);
+  /* Better optical alignment */
+  text-wrap: balance;
 }
 
 h1 {
-  font-size: 2.5rem;
+  /* Fluid scaling: 2rem (32px) -> 3rem (48px) */
+  font-size: clamp(2rem, 1.5rem + 2.5vw, 3rem);
   letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 h2 {
-  font-size: 2rem;
+  /* Fluid scaling: 1.75rem (28px) -> 2.5rem (40px) */
+  font-size: clamp(1.75rem, 1.25rem + 2vw, 2.5rem);
   letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 h3 {
-  font-size: 1.5rem;
+  /* Fluid scaling: 1.5rem (24px) -> 2rem (32px) */
+  font-size: clamp(1.5rem, 1rem + 1.5vw, 2rem);
   letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+h4 {
+  /* Fluid scaling: 1.25rem (20px) -> 1.75rem (28px) */
+  font-size: clamp(1.25rem, 0.875rem + 1.25vw, 1.75rem);
+  letter-spacing: -0.01em;
+}
+
+h5 {
+  /* Fluid scaling: 1.125rem (18px) -> 1.5rem (24px) */
+  font-size: clamp(1.125rem, 0.75rem + 1vw, 1.5rem);
+}
+
+h6 {
+  /* Fluid scaling: 1rem (16px) -> 1.25rem (20px) */
+  font-size: clamp(1rem, 0.75rem + 0.75vw, 1.25rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 p {
   margin-bottom: var(--gap);
+  line-height: 1.75;
 }
 
 a {
@@ -363,16 +392,93 @@ pre code {
 .prose {
   max-width: 65ch;
   margin: 0 auto;
+  /* Inherit fluid font sizing */
+  font-size: inherit;
 }
 
 .prose img {
   border-radius: var(--radius-medium);
+  max-width: 100%;
+  height: auto;
 }
 
 .prose a {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
+  transition: all 0.2s ease;
+}
+
+.prose a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Enhanced prose typography for better readability */
+.prose > * + * {
+  margin-top: 1em;
+}
+
+.prose li + li {
+  margin-top: 0.5em;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.prose code {
+  font-size: 0.875em;
+  padding: 0.2em 0.4em;
+  background: var(--gray-100);
+  border-radius: var(--radius);
+}
+
+.prose pre {
+  overflow-x: auto;
+  border-radius: var(--radius-medium);
+  padding: var(--gap);
+  background: var(--gray-100);
+}
+
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 0.875em;
+}
+
+.prose blockquote {
+  border-left: 4px solid var(--accent);
+  padding-left: var(--gap);
+  font-style: italic;
+  color: var(--foreground-secondary);
+}
+
+.prose ul, .prose ol {
+  padding-left: 1.5em;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--gap-double) 0;
+}
+
+.prose th, .prose td {
+  padding: 0.75em;
+  border: 1px solid var(--gray-200);
+  text-align: left;
+}
+
+.prose th {
+  background: var(--gray-100);
+  font-weight: 600;
+}
+
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--gray-200);
+  margin: var(--gap-double) 0;
 }
 
 /* Animations and transitions */
@@ -387,20 +493,33 @@ pre code {
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  h1 {
-    font-size: 2rem;
-  }
-
-  h2 {
-    font-size: 1.75rem;
-  }
-
-  h3 {
-    font-size: 1.25rem;
-  }
-
   .container {
     padding: 0 var(--gap-half);
+  }
+}
+
+/* Enhanced responsive breakpoints for better scaling */
+@media (min-width: 768px) {
+  :root {
+    --gap: 1rem;
+    --gap-double: 2rem;
+    --gap-triple: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --gap: 1.25rem;
+    --gap-double: 2.5rem;
+    --gap-triple: 3.75rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --gap: 1.5rem;
+    --gap-double: 3rem;
+    --gap-triple: 4.5rem;
   }
 }
 
