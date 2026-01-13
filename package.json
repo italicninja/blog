@@ -23,7 +23,7 @@
     "@uploadthing/react": "^7.3.2",
     "@vercel/analytics": "^1.6.1",
     "dotenv": "^17.0.1",
-    "framer-motion": "^12.23.26",
+    "framer-motion": "^12.26.1",
     "gray-matter": "^4.0.3",
     "next": "^15.5.9",
     "next-auth": "^4.24.5",
