@@ -50,6 +50,8 @@ jobs:
           NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
           BRANCH_NAME: ${{ github.head_ref }}
         run: |
+          set -euo pipefail
+
           echo "============================================"
           echo "IMMEDIATE CLEANUP MODE"
           echo "PR was merged. Git branch: $BRANCH_NAME"
@@ -61,8 +63,8 @@ jobs:
 
           # Find the NeonDB branch ID by matching the branch name
           BRANCH_ID=$(neonctl branches list \
-            --project-id $NEON_PROJECT_ID \
-            --api-key $NEON_API_KEY \
+            --project-id "$NEON_PROJECT_ID" \
+            --api-key "$NEON_API_KEY" \
             -o json | jq -r ".[] | select(.name == \"$NEON_BRANCH_NAME\") | .id")
 
           # Exit gracefully if branch doesn't exist (may have been manually deleted)
@@ -72,16 +74,12 @@ jobs:
             exit 0
           fi
 
-          # Delete the NeonDB branch
+          # Delete the NeonDB branch; set -e will propagate failures
           echo "Deleting branch ID: $BRANCH_ID"
-          if neonctl branches delete $BRANCH_ID \
-            --project-id $NEON_PROJECT_ID \
-            --api-key $NEON_API_KEY; then
-            echo "✅ Successfully deleted NeonDB branch: $NEON_BRANCH_NAME (ID: $BRANCH_ID)"
-          else
-            echo "❌ Failed to delete NeonDB branch: $NEON_BRANCH_NAME"
-            exit 1
-          fi
+          neonctl branches delete "$BRANCH_ID" \
+            --project-id "$NEON_PROJECT_ID" \
+            --api-key "$NEON_API_KEY"
+          echo "✅ Successfully deleted NeonDB branch: $NEON_BRANCH_NAME (ID: $BRANCH_ID)"
 
       # ========================================
       # SCHEDULED CLEANUP (daily at midnight)
@@ -90,6 +88,8 @@ jobs:
         if: github.event_name != 'pull_request'
         id: branches
         run: |
+          set -euo pipefail
+
           echo "============================================"
           echo "SCHEDULED CLEANUP MODE"
           echo "Fetching active Git branches..."
@@ -101,7 +101,7 @@ jobs:
             sed 's|origin/||' | \
             xargs echo)
 
-          echo "ACTIVE_BRANCHES=${BRANCHES}" >> $GITHUB_OUTPUT
+          echo "ACTIVE_BRANCHES=${BRANCHES}" >> "$GITHUB_OUTPUT"
           echo "Active branches: ${BRANCHES}"
 
       - name: Set expiration for orphaned NeonDB branches
@@ -111,6 +111,8 @@ jobs:
           NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
           ACTIVE_BRANCHES: ${{ steps.branches.outputs.ACTIVE_BRANCHES }}
         run: |
+          set -euo pipefail
+
           # Validate required environment variables
           if [[ -z "$NEON_API_KEY" || -z "$NEON_PROJECT_ID" ]]; then
             echo "❌ Error: NEON_API_KEY and NEON_PROJECT_ID must be set"
@@ -131,9 +133,11 @@ jobs:
             -o json)
 
           # Process each NeonDB branch
-          echo "$NEON_BRANCHES" | jq -c '.[]' | while read -r branch; do
-            BRANCH_ID=$(echo $branch | jq -r '.id')
-            BRANCH_NAME=$(echo $branch | jq -r '.name')
+          # Use process substitution instead of a pipe so the loop runs in the current
+          # shell - this ensures set -e and exit codes propagate correctly from neonctl.
+          while read -r branch; do
+            BRANCH_ID=$(echo "$branch" | jq -r '.id')
+            BRANCH_NAME=$(echo "$branch" | jq -r '.name')
 
             # Skip production branches (main/master)
             if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
@@ -158,19 +162,16 @@ jobs:
               EXPIRY_DATE=$(date -u -d "+3 days" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
                            date -u -v +3d "+%Y-%m-%dT%H:%M:%SZ")
 
-              # Set the NeonDB branch to expire
-              if neonctl branches update $BRANCH_ID \
-                --project-id $NEON_PROJECT_ID \
-                --api-key $NEON_API_KEY \
-                --expires-at $EXPIRY_DATE; then
-                echo "   ✅ Set expiration for '$BRANCH_NAME' to $EXPIRY_DATE"
-              else
-                echo "   ❌ Failed to set expiration for '$BRANCH_NAME'"
-              fi
+              # Set the NeonDB branch to expire; set -e will propagate failures
+              neonctl branches update "$BRANCH_ID" \
+                --project-id "$NEON_PROJECT_ID" \
+                --api-key "$NEON_API_KEY" \
+                --expires-at "$EXPIRY_DATE"
+              echo "   ✅ Set expiration for '$BRANCH_NAME' to $EXPIRY_DATE"
             else
               echo "✓ Git branch '$GIT_BRANCH_NAME' still active (NeonDB branch: '$BRANCH_NAME' - no action needed)"
             fi
-          done
+          done < <(echo "$NEON_BRANCHES" | jq -c '.[]')
 
           echo "============================================"
           echo "Scheduled cleanup complete!"
