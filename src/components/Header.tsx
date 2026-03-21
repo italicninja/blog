@@ -1,10 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
-import { signIn, signOut } from 'next-auth/react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -41,6 +39,10 @@ export default function Header() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      // Clear pending close timeout on unmount to prevent state updates after unmount
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -169,9 +171,15 @@ export default function Header() {
               </div>
             ) : (
               <button
-                onClick={() => {
+                onClick={async () => {
                   setIsButtonLoading(true);
-                  signIn(process.env.NODE_ENV === 'development' ? 'dev-bypass' : 'github');
+                  try {
+                    await signIn(process.env.NODE_ENV === 'development' ? 'dev-bypass' : 'github');
+                  } catch (err) {
+                    console.error('Sign-in error:', err);
+                  } finally {
+                    setIsButtonLoading(false);
+                  }
                 }}
                 disabled={isButtonLoading}
                 className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-foreground dark:hover:text-foreground transition-colors px-2 py-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

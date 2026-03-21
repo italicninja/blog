@@ -7,8 +7,8 @@ import { getCachedImageUrl, cacheImageUrl } from './image-cache';
 // Base URL for UploadThing images
 const UPLOADTHING_BASE_URL = 'https://uploadthing.com/f';
 
-// Default fallback image path
-const DEFAULT_FALLBACK_IMAGE = '/images/posts/nextjs.jpg';
+// Default fallback image path — single source of truth
+export const DEFAULT_FALLBACK_IMAGE = '/images/posts/nextjs.jpg';
 
 /**
  * Regular expression to match UploadThing URLs
@@ -33,7 +33,7 @@ export interface ImageMetadata {
  * @param url The UploadThing URL
  * @returns The file key or null if the URL is not a valid UploadThing URL
  */
-export function extractFileKeyFromUrl(url: string): string | null {
+function extractFileKeyFromUrl(url: string): string | null {
   if (!url) return null;
   
   try {
@@ -124,22 +124,6 @@ export function getImageUrl(metadataStr: string | null): string {
   } catch (error) {
     console.error('Error processing image metadata:', error, 'Input:', metadataStr);
     return DEFAULT_FALLBACK_IMAGE;
-  }
-}
-
-/**
- * Parse image metadata from a string
- * @param metadataStr The metadata string from the database
- * @returns The parsed metadata or null if invalid
- */
-export function parseImageMetadata(metadataStr: string | null): ImageMetadata | null {
-  if (!metadataStr) return null;
-  
-  try {
-    return JSON.parse(metadataStr) as ImageMetadata;
-  } catch (error) {
-    console.error('Error parsing image metadata:', error);
-    return null;
   }
 }
 

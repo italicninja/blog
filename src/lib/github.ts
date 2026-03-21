@@ -4,11 +4,11 @@ import { getOwnerGithubLogin } from './auth-utils';
 export interface GitHubProject {
   id: number;
   name: string;
-  description: string;
+  description: string | null;
   html_url: string;
   stargazers_count: number;
   forks_count: number;
-  language: string;
+  language: string | null;
   updated_at: string;
 }
 
@@ -29,8 +29,8 @@ export interface GitHubCommit {
 export const getTopGitHubProjects = cache(async (username?: string, count: number = 3): Promise<GitHubProject[]> => {
   const owner = username || getOwnerGithubLogin();
   try {
-    // Fetch repositories from GitHub API
-    const response = await fetch(`https://api.github.com/users/${owner}/repos?sort=stars&per_page=10`, {
+    // Fetch repositories from GitHub API, already sorted by stars server-side
+    const response = await fetch(`https://api.github.com/users/${owner}/repos?sort=stars&direction=desc&per_page=${count}`, {
       headers: {
         'Accept': 'application/vnd.github.v3+json',
       },
@@ -42,12 +42,8 @@ export const getTopGitHubProjects = cache(async (username?: string, count: numbe
       throw new Error(`GitHub API responded with status: ${response.status}`);
     }
 
-    const repos = await response.json();
-    
-    // Sort by stars and return the top ones
-    return repos
-      .sort((a: GitHubProject, b: GitHubProject) => b.stargazers_count - a.stargazers_count)
-      .slice(0, count);
+    const repos: GitHubProject[] = await response.json();
+    return repos.slice(0, count);
   } catch (error) {
     console.error('Error fetching GitHub projects:', error);
     return [];
@@ -68,23 +64,11 @@ export const getLatestCommit = cache(async (owner?: string, repo: string = 'blog
     });
 
     if (!response.ok) {
-      console.warn(`GitHub API responded with status: ${response.status}. Using fallback commit info.`);
-      // Provide fallback commit info for development/demo purposes
-      return {
-        sha: 'abcdef1234567890abcdef1234567890abcdef12',
-        html_url: `https://github.com/${repoOwner}/${repo}/commit/abcdef1234567890abcdef1234567890abcdef12`,
-        commit: {
-          author: {
-            name: 'Developer',
-            email: 'dev@example.com',
-            date: new Date().toISOString()
-          },
-          message: 'Latest commit'
-        }
-      };
+      console.warn(`GitHub API responded with status: ${response.status}. Commit info unavailable.`);
+      return null;
     }
 
-    const commits = await response.json();
+    const commits: GitHubCommit[] = await response.json();
 
     if (commits && commits.length > 0) {
       return commits[0];
@@ -93,18 +77,6 @@ export const getLatestCommit = cache(async (owner?: string, repo: string = 'blog
     return null;
   } catch (error) {
     console.error('Error fetching latest commit:', error);
-    // Provide fallback commit info for development/demo purposes
-    return {
-      sha: 'abcdef1234567890abcdef1234567890abcdef12',
-      html_url: `https://github.com/${owner}/${repo}/commit/abcdef1234567890abcdef1234567890abcdef12`,
-      commit: {
-        author: {
-          name: 'Developer',
-          email: 'dev@example.com',
-          date: new Date().toISOString()
-        },
-        message: 'Latest commit'
-      }
-    };
+    return null;
   }
 });

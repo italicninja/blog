@@ -46,18 +46,18 @@ export default async function BlogPage({
 
   const { orderBy, orderDirection } = sortOptions[sort] || sortOptions.newest;
 
-  // Fetch posts with pagination and sorting
-  const { posts, total, totalPages } = await getAllPosts({
-    page: currentPage,
-    limit: 10,
-    orderBy,
-    orderDirection,
-    tag,
-    search,
-  });
-
-  // Fetch all tags for the sidebar
-  const tags = await getAllTags();
+  // Fetch posts and tags in parallel
+  const [{ posts, total, totalPages }, tags] = await Promise.all([
+    getAllPosts({
+      page: currentPage,
+      limit: 10,
+      orderBy,
+      orderDirection,
+      tag,
+      search,
+    }),
+    getAllTags(),
+  ]);
 
   return (
     <>
@@ -134,27 +134,30 @@ export default async function BlogPage({
                 {totalPages > 1 && (
                   <div className="flex justify-center mt-8">
                     <nav className="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                      {/* Previous Page */}
-                      <Link
-                        href={{
-                          pathname: '/blog',
-                          query: {
-                            ...(tag ? { tag } : {}),
-                            ...(search ? { search } : {}),
-                            ...(sort !== 'newest' ? { sort } : {}),
-                            ...(currentPage > 2 ? { page: currentPage - 1 } : {}),
-                          },
-                        }}
-                        className={`relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium rounded-l-md ${
-                          currentPage === 1
-                            ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
-                        }`}
-                        aria-disabled={currentPage === 1}
-                        tabIndex={currentPage === 1 ? -1 : 0}
-                      >
-                        Previous
-                      </Link>
+                      {/* Previous Page — render as span when disabled to prevent navigation */}
+                      {currentPage === 1 ? (
+                        <span
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium rounded-l-md text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                          aria-disabled="true"
+                        >
+                          Previous
+                        </span>
+                      ) : (
+                        <Link
+                          href={{
+                            pathname: '/blog',
+                            query: {
+                              ...(tag ? { tag } : {}),
+                              ...(search ? { search } : {}),
+                              ...(sort !== 'newest' ? { sort } : {}),
+                              ...(currentPage > 2 ? { page: currentPage - 1 } : {}),
+                            },
+                          }}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium rounded-l-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          Previous
+                        </Link>
+                      )}
 
                       {/* Page Numbers */}
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -180,27 +183,30 @@ export default async function BlogPage({
                         </Link>
                       ))}
 
-                      {/* Next Page */}
-                      <Link
-                        href={{
-                          pathname: '/blog',
-                          query: {
-                            ...(tag ? { tag } : {}),
-                            ...(search ? { search } : {}),
-                            ...(sort !== 'newest' ? { sort } : {}),
-                            page: currentPage + 1,
-                          },
-                        }}
-                        className={`relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium rounded-r-md ${
-                          currentPage === totalPages
-                            ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
-                        }`}
-                        aria-disabled={currentPage === totalPages}
-                        tabIndex={currentPage === totalPages ? -1 : 0}
-                      >
-                        Next
-                      </Link>
+                      {/* Next Page — render as span when disabled to prevent navigation */}
+                      {currentPage === totalPages ? (
+                        <span
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium rounded-r-md text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                          aria-disabled="true"
+                        >
+                          Next
+                        </span>
+                      ) : (
+                        <Link
+                          href={{
+                            pathname: '/blog',
+                            query: {
+                              ...(tag ? { tag } : {}),
+                              ...(search ? { search } : {}),
+                              ...(sort !== 'newest' ? { sort } : {}),
+                              page: currentPage + 1,
+                            },
+                          }}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium rounded-r-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          Next
+                        </Link>
+                      )}
                     </nav>
                   </div>
                 )}

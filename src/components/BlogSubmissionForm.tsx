@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef, FormEvent, ChangeEvent } from 'react';
+import { useState, FormEvent, ChangeEvent } from 'react';
+import { imageUrlToMetadata } from '@/lib/uploadthing-utils';
 import { TagSelector } from '@/components/TagSelector';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { OurUploadDropzone } from '@/components/UploadThingProvider';
-import { imageUrlToMetadata } from '@/lib/uploadthing-utils';
+
 import MarkdownEditor from '@/components/MarkdownEditor';
 
 interface FormData {
@@ -32,7 +33,7 @@ export default function BlogSubmissionForm() {
     coverImage: '',
     tags: [],
   });
-  const formRef = useRef<HTMLFormElement>(null);
+
 
   // Handle form input changes
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -195,7 +196,7 @@ export default function BlogSubmissionForm() {
         </div>
       )}
 
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -260,10 +261,7 @@ export default function BlogSubmissionForm() {
                 endpoint="imageUploader"
                 onClientUploadComplete={(res: Array<{ url: string; fileKey?: string }>) => {
                   if (res && res.length > 0) {
-                    // Store the metadata instead of just the URL
-                    const imageMetadata = imageUrlToMetadata(res[0].url, "Cover image for post");
-                    setFormData(prev => ({ ...prev, coverImage: res[0].url })); // Keep URL for UI display
-                    // The actual metadata will be sent to the server during submission
+                    setFormData(prev => ({ ...prev, coverImage: res[0].url }));
                   }
                   setIsUploading(false);
                   setUploadProgress(null);

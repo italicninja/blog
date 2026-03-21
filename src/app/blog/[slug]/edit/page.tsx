@@ -7,7 +7,6 @@ import { getPostBySlug } from '@/lib/posts';
 import { authOptions } from '@/lib/auth-options';
 import { getGithubLogin, isOwner } from '@/lib/auth-utils';
 import { hasPermission } from '@/lib/authorized-posters';
-import prisma from '@/lib/prisma';
 
 type Params = {
   slug: string;
@@ -38,30 +37,18 @@ export default async function EditBlogPage({ params }: PageProps) {
   // Get the GitHub login from the session
   const githubLogin = getGithubLogin(session.user);
 
-  // Get the full post from database to check author
-  const dbPost = await prisma.post.findUnique({
-    where: { slug },
-    include: { author: true },
-  });
-
-  if (!dbPost) {
-    notFound();
-  }
-
-  // Check if the user is the author or has edit permission
-  const isAuthor = dbPost.author.githubLogin === githubLogin || dbPost.author.name === githubLogin;
+  // Use the author already fetched by getPostBySlug (no extra DB query needed)
+  // post.author.githubLogin is the reliable field for identity comparison
+  const isAuthor = post.author?.githubLogin
+    ? post.author.githubLogin === githubLogin
+    : false;
   const isOwnerUser = isOwner(githubLogin);
 
   let canEdit = isAuthor || isOwnerUser;
 
   // If not author or owner, check for edit permission
   if (!canEdit) {
-    try {
-      canEdit = await hasPermission(githubLogin, 'edit');
-    } catch (error) {
-      console.error('Error checking edit permission:', error);
-      canEdit = false;
-    }
+    canEdit = await hasPermission(githubLogin, 'edit');
   }
 
   // If user doesn't have permission, show unauthorized message

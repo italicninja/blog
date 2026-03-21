@@ -23,10 +23,12 @@ export function getBaseUrl(): string {
     // 3. Check for Vercel preview deployment URL pattern
     if (process.env.VERCEL_ENV === 'preview') {
       // If we're in a preview but don't have VERCEL_URL, try to construct it
-      const projectName = process.env.VERCEL_PROJECT_NAME || 'blog';
-      const teamSlug = process.env.VERCEL_TEAM_SLUG || 'italicninjas-projects';
-      // This is a fallback pattern that might work for some preview deployments
-      return `https://${projectName}-git-main-${teamSlug}.vercel.app`;
+      // Requires VERCEL_PROJECT_NAME and VERCEL_TEAM_SLUG to be set in env
+      const projectName = process.env.VERCEL_PROJECT_NAME;
+      const teamSlug = process.env.VERCEL_TEAM_SLUG;
+      if (projectName && teamSlug) {
+        return `https://${projectName}-git-main-${teamSlug}.vercel.app`;
+      }
     }
     
     // 4. Fallback for local development
@@ -35,13 +37,6 @@ export function getBaseUrl(): string {
   
   // For client-side rendering, use the current window location
   return window.location.origin;
-}
-
-/**
- * Gets the callback URL for a specific provider
- */
-export function getCallbackUrl(provider: string): string {
-  return `${getBaseUrl()}/api/auth/callback/${provider}`;
 }
 
 /**

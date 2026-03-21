@@ -4,9 +4,9 @@ import {
   isAuthorizedPoster,
   addAuthorizedPoster,
   removeAuthorizedPoster,
-  getAllAuthorizedPosters
+  getAllAuthorizedPosters,
+  hasPermission
 } from '@/lib/authorized-posters';
-import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth-options';
 import { getGithubLogin, isOwner } from '@/lib/auth-utils';
 
@@ -18,27 +18,8 @@ async function isAdmin(githubLogin: string): Promise<boolean> {
   if (isOwner(githubLogin)) return true;
 
   try {
-    // First check if the user is authorized
-    const isAuthorized = await isAuthorizedPoster(githubLogin);
-    if (!isAuthorized) return false;
-
-    // Check if the user has admin permission level
-    const poster = await prisma.$queryRaw`
-      SELECT * FROM "AuthorizedPoster" WHERE "githubLogin" = ${githubLogin}
-    `;
-
-    if (Array.isArray(poster) && poster.length > 0) {
-      return poster[0].permissionLevel === 'admin';
-    }
-
-    // Fallback to the original logic for backward compatibility
-    const authorizedPosters = await getAllAuthorizedPosters();
-
-    // If there are no authorized posters or this is the first one, they're an admin
-    if (!Array.isArray(authorizedPosters) || authorizedPosters.length === 0) return true;
-
-    // For simplicity, the first authorized poster is considered an admin
-    return authorizedPosters[0]?.githubLogin === githubLogin;
+    // Check if the user has admin permission level via hasPermission
+    return await hasPermission(githubLogin, 'admin');
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;
@@ -96,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const currentUserLogin = session.user.githubLogin || session.user.name || '';
+    const currentUserLogin = getGithubLogin(session.user);
     
     // Check if the user is an admin
     if (!currentUserLogin || !(await isAdmin(currentUserLogin))) {
@@ -160,7 +141,7 @@ export async function DELETE(request: NextRequest) {
     }
     
     // Get the GitHub login from the session
-    const currentUserLogin = session.user.githubLogin || session.user.name || '';
+    const currentUserLogin = getGithubLogin(session.user);
     
     // Check if the user is an admin
     if (!currentUserLogin || !(await isAdmin(currentUserLogin))) {

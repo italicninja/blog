@@ -19,8 +19,10 @@ function AuthErrorContent() {
         return "You do not have permission to sign in.";
       case "Verification":
         return "The verification link has expired or has already been used.";
+      case "Default":
+        return "An unknown error occurred during authentication. Please try again.";
       default:
-        return "An unknown error occurred during authentication.";
+        return "An unexpected error occurred during authentication.";
     }
   };
 
