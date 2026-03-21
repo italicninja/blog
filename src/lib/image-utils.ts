@@ -5,14 +5,6 @@ import type { OurFileRouter } from "./uploadthing";
 const { useUploadThing } = generateReactHelpers<OurFileRouter>();
 
 /**
- * Regular expression to find markdown image references
- * Captures:
- * - Group 1: The alt text
- * - Group 2: The image URL/path
- */
-const MARKDOWN_IMAGE_REGEX = /!\[(.*?)\]\((.*?)\)/g;
-
-/**
  * Regular expression to identify local image paths
  * Matches paths that don't start with http://, https://, or data:
  */
@@ -24,10 +16,12 @@ const LOCAL_IMAGE_REGEX = /^(?!(https?:\/\/|data:))/i;
  * @returns Array of objects containing alt text and image path
  */
 export function extractImageReferences(content: string): Array<{ alt: string; path: string }> {
+  // Create a fresh regex each call to avoid stateful lastIndex bleed between calls
+  const regex = /!\[(.*?)\]\((.*?)\)/g;
   const images: Array<{ alt: string; path: string }> = [];
   let match;
 
-  while ((match = MARKDOWN_IMAGE_REGEX.exec(content)) !== null) {
+  while ((match = regex.exec(content)) !== null) {
     const [, alt, path] = match;
     images.push({ alt, path });
   }

@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { isAuthorizedPoster, hasPermission } from '@/lib/authorized-posters';
 import prisma from '@/lib/prisma';
-import { Prisma, Post } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import slugify from 'slugify';
 import { authOptions } from '@/lib/auth-options';
 import { z } from 'zod';
 import { getGithubLogin, isOwner } from '@/lib/auth-utils';
-
-type PostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 // Validation schema for post creation
 const PostSchema = z.object({
@@ -80,27 +78,20 @@ export async function POST(request: NextRequest) {
       const isAuthorized = await isAuthorizedPoster(githubLogin);
 
       // First check basic authorization
-      if (!githubLogin || !isAuthorized) {
-      return NextResponse.json(
-        { error: 'You are not authorized to create posts' },
-        { status: 403 }
+      if (!isAuthorized) {
+        return NextResponse.json(
+          { error: 'You are not authorized to create posts' },
+          { status: 403 }
         );
       }
 
       // Then check if they have publishing permission
-      // Note: hasPermission might not be available yet due to Prisma client issues,
-      // so we'll use a try-catch and fall back to basic authorization
-      try {
-        const canPublish = await hasPermission(githubLogin, 'publish');
-        if (!canPublish) {
-          return NextResponse.json(
-            { error: 'You do not have permission to publish posts' },
-            { status: 403 }
-          );
-        }
-      } catch (error) {
-        console.warn('Error checking publish permission, falling back to basic authorization:', error);
-        // We already checked basic authorization above, so we can continue
+      const canPublish = await hasPermission(githubLogin, 'publish');
+      if (!canPublish) {
+        return NextResponse.json(
+          { error: 'You do not have permission to publish posts' },
+          { status: 403 }
+        );
       }
     }
 
@@ -110,7 +101,7 @@ export async function POST(request: NextRequest) {
     // Validate with Zod schema
     const validationResult = PostSchema.safeParse(body);
     if (!validationResult.success) {
-      const errorMessages = validationResult.error.errors.map((err: any) =>
+      const errorMessages = validationResult.error.errors.map((err) =>
         `${err.path.join('.')}: ${err.message}`
       ).join(', ');
 
@@ -223,16 +214,16 @@ export async function GET(request: NextRequest) {
     const validOrderDirections = ['asc', 'desc'];
 
     const sanitizedOrderBy = validOrderByFields.includes(orderBy) ? orderBy : 'createdAt';
-    const sanitizedOrderDirection = validOrderDirections.includes(orderDirection as any) ? orderDirection as 'asc' | 'desc' : 'desc';
+    const sanitizedOrderDirection = (validOrderDirections.includes(orderDirection) ? orderDirection : 'desc') as 'asc' | 'desc';
 
     // Build the where clause
     const whereConditions: Prisma.PostWhereInput[] = [];
 
     // Published status filter
     if (published === 'true') {
-      whereConditions.push({ status: 'PUBLISHED' } as Prisma.PostWhereInput);
+      whereConditions.push({ status: { equals: 'PUBLISHED' } } as Prisma.PostWhereInput);
     } else if (published === 'false') {
-      whereConditions.push({ status: 'DRAFT' } as Prisma.PostWhereInput);
+      whereConditions.push({ status: { equals: 'DRAFT' } } as Prisma.PostWhereInput);
     }
 
     // Tag filter
@@ -386,7 +377,7 @@ export async function PATCH(request: NextRequest) {
 
     // Parse the request body
     const body = await request.json();
-    const { id, ...updateData } = body;
+    const { id, tags: bodyTags } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -409,31 +400,36 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Check if the user is the author or has edit permission
-    const isAuthor = post.author.githubLogin === githubLogin || post.author.name === githubLogin;
+    const isAuthor = post.author.githubLogin === githubLogin;
 
     if (!isAuthor && !isOwner(githubLogin)) {
-      try {
-        const canEdit = await hasPermission(githubLogin, 'edit');
-        if (!canEdit) {
-          return NextResponse.json(
-            { error: 'You do not have permission to edit this post' },
-            { status: 403 }
-          );
-        }
-      } catch (error) {
+      const canEdit = await hasPermission(githubLogin, 'edit');
+      if (!canEdit) {
         return NextResponse.json(
-          { error: 'Error checking edit permission' },
-          { status: 500 }
+          { error: 'You do not have permission to edit this post' },
+          { status: 403 }
         );
       }
     }
 
+    // Whitelist only allowed fields to prevent mass assignment
+    const safeUpdateData: {
+      title?: string;
+      content?: string;
+      excerpt?: string | null;
+      coverImage?: string | null;
+    } = {};
+    if (typeof body.title === 'string') safeUpdateData.title = body.title;
+    if (typeof body.content === 'string') safeUpdateData.content = body.content;
+    if ('excerpt' in body) safeUpdateData.excerpt = body.excerpt ?? null;
+    if ('coverImage' in body) safeUpdateData.coverImage = body.coverImage ?? null;
+
     // Process tags if provided
     let tagConnections;
-    if (updateData.tags && Array.isArray(updateData.tags)) {
+    if (bodyTags && Array.isArray(bodyTags)) {
       const tagObjects = [];
-      for (const tagName of updateData.tags) {
-        const trimmedName = tagName.trim();
+      for (const tagName of bodyTags) {
+        const trimmedName = (tagName as string).trim();
         if (!trimmedName) continue;
 
         const tag = await prisma.tag.upsert({
@@ -447,19 +443,16 @@ export async function PATCH(request: NextRequest) {
 
       // Set up tag connections
       tagConnections = {
-        set: [], // Clear existing connections
+        set: [] as { id: string }[], // Clear existing connections
         connect: tagObjects.map(tag => ({ id: tag.id }))
       };
-
-      // Remove tags from updateData as we'll handle them separately
-      delete updateData.tags;
     }
     
     // Update the post
     const updatedPost = await prisma.post.update({
       where: { id },
       data: {
-        ...updateData,
+        ...safeUpdateData,
         ...(tagConnections ? { tags: tagConnections } : {}),
         updatedAt: new Date(),
         editedAt: new Date(), // Set the edited timestamp

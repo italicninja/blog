@@ -5,18 +5,14 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getPostBySlug, getRecentPosts, getAllPostSlugs, getPostsByTag } from "@/lib/posts";
 import { formatDate } from "@/utils/date";
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import PostContent from "./post-content";
 import { Suspense } from "react";
-import { getImageUrl, isValidImageData } from "@/lib/uploadthing-utils";
+import { getImageUrl, isValidImageData, DEFAULT_FALLBACK_IMAGE } from "@/lib/uploadthing-utils";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 import { getGithubLogin, isOwner } from '@/lib/auth-utils';
 import { hasPermission } from '@/lib/authorized-posters';
-import prisma from '@/lib/prisma';
-
-// Default fallback image path
-const DEFAULT_FALLBACK_IMAGE = '/images/posts/nextjs.jpg';
 
 // Fallback image component for error cases
 function FallbackImage({ title }: { title: string }) {
@@ -69,15 +65,12 @@ type Params = {
   slug: string;
 };
 
-type SearchParams = { [key: string]: string | string[] | undefined };
-
 export async function generateStaticParams() {
   return getAllPostSlugs();
 }
 
 export async function generateMetadata(
-  { params }: { params: Promise<Params> },
-  parent: ResolvingMetadata
+  { params }: { params: Promise<Params> }
 ): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
@@ -104,7 +97,6 @@ export async function generateMetadata(
 
 type PageProps = {
   params: Promise<Params>;
-  searchParams?: Promise<SearchParams>;
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
@@ -115,6 +107,11 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
+  // Determine the site URL for share links
+  const siteUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'https://italicninja.dev';
+
   // Check if user can edit this post
   const session = await getServerSession(authOptions);
   let canEdit = false;
@@ -122,57 +119,50 @@ export default async function BlogPostPage({ params }: PageProps) {
   if (session) {
     const githubLogin = getGithubLogin(session.user);
 
-    // Get the full post from database to check author
-    const dbPost = await prisma.post.findUnique({
-      where: { slug },
-      include: { author: true },
-    });
+    // Use the author already fetched by getPostBySlug (no extra DB query)
+    const isAuthor = post.author?.githubLogin
+      ? post.author.githubLogin === githubLogin
+      : false;
+    const isOwnerUser = isOwner(githubLogin);
 
-    if (dbPost) {
-      // Check if the user is the author or has edit permission
-      const isAuthor = dbPost.author ?
-        (dbPost.author.githubLogin === githubLogin || dbPost.author.name === githubLogin) :
-        false;
-      const isOwnerUser = isOwner(githubLogin);
+    canEdit = isAuthor || isOwnerUser;
 
-      canEdit = isAuthor || isOwnerUser;
-
-      // If not author or owner, check for edit permission
-      if (!canEdit) {
-        try {
-          canEdit = await hasPermission(githubLogin, 'edit');
-        } catch (error) {
-          console.error('Error checking edit permission:', error);
-          canEdit = false;
-        }
+    // If not author or owner, check for edit permission
+    if (!canEdit) {
+      try {
+        canEdit = await hasPermission(githubLogin, 'edit');
+      } catch (error) {
+        console.error('Error checking edit permission:', error);
+        canEdit = false;
       }
     }
   }
 
-  // Get related posts - first try posts with the same tag, then fall back to recent posts
-  let relatedPosts: NonNullable<Awaited<ReturnType<typeof getPostBySlug>>>[] = [];
-  if (post.tags.length > 0) {
-    // Get posts with the same primary tag
-    const primaryTag = post.tags[0];
-    const taggedPosts = await getPostsByTag(primaryTag);
-    relatedPosts = taggedPosts.filter((p): p is NonNullable<typeof p> =>
-      p !== undefined && p.slug !== post.slug
-    ).slice(0, 3);
-  }
+  // Prefetch both tagged posts and recent posts in parallel
+  const primaryTag = post.tags.length > 0 ? post.tags[0] : null;
+  const [taggedPosts, recentPosts] = await Promise.all([
+    primaryTag ? getPostsByTag(primaryTag) : Promise.resolve([]),
+    getRecentPosts(6),
+  ]);
 
-  // If we don't have enough related posts by tag, add some recent posts
-  if (relatedPosts.length < 3) {
-    const recentPosts = await getRecentPosts(6);
-    const additionalPosts = recentPosts
-      .filter((p): p is NonNullable<typeof p> =>
-        p !== undefined &&
-        p.slug !== post.slug &&
-        !relatedPosts.some(rp => rp.slug === p.slug)
-      )
-      .slice(0, 3 - relatedPosts.length);
+  // Build related posts: tagged first, fill with recent
+  const relatedByTag = taggedPosts
+    .filter((p): p is NonNullable<typeof p> => p !== undefined && p.slug !== post.slug)
+    .slice(0, 3);
 
-    relatedPosts = [...relatedPosts, ...additionalPosts];
-  }
+  const relatedPosts: NonNullable<Awaited<ReturnType<typeof getPostBySlug>>>[] =
+    relatedByTag.length < 3
+      ? [
+          ...relatedByTag,
+          ...recentPosts
+            .filter((p): p is NonNullable<typeof p> =>
+              p !== undefined &&
+              p.slug !== post.slug &&
+              !relatedByTag.some(rp => rp.slug === p.slug)
+            )
+            .slice(0, 3 - relatedByTag.length),
+        ]
+      : relatedByTag;
 
   return (
     <>
@@ -298,7 +288,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 </Link>
                 <div className="flex space-x-4">
                   <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(`https://yourdomain.com/blog/${post.slug}`)}`}
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(`${siteUrl}/blog/${post.slug}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 hover:text-accent transition-colors"
@@ -309,7 +299,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                     </svg>
                   </a>
                   <a
-                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://yourdomain.com/blog/${post.slug}`)}`}
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${siteUrl}/blog/${post.slug}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 hover:text-accent transition-colors"
@@ -346,34 +336,14 @@ export default async function BlogPostPage({ params }: PageProps) {
                           {formatDate(relatedPost.date)}
                         </time>
                       </div>
-                      <Link href={`/blog/${relatedPost.slug}`} className="group-hover:underline decoration-1 underline-offset-2">
-                        <h3 className="text-lg font-medium tracking-tight text-foreground mb-2 line-clamp-2">
+                      <h3 className="text-lg font-medium tracking-tight text-foreground mb-2 line-clamp-2">
+                        <Link href={`/blog/${relatedPost.slug}`} className="hover:underline decoration-1 underline-offset-2">
                           {relatedPost.title}
-                        </h3>
-                      </Link>
+                        </Link>
+                      </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 flex-grow">
                         {relatedPost.excerpt}
                       </p>
-                      <Link
-                        href={`/blog/${relatedPost.slug}`}
-                        className="inline-flex items-center text-sm font-medium text-accent hover:text-accent-light transition-colors"
-                      >
-                        Read more
-                        <svg
-                          className="ml-1 w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M14 5l7 7m0 0l-7 7m7-7H3"
-                          />
-                        </svg>
-                      </Link>
                     </div>
                   </article>
                 ))}

@@ -6,13 +6,6 @@ import { useState, Suspense, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-// This will be replaced with the actual value at build time
-declare const process: {
-  env: {
-    NEXT_PUBLIC_ENABLE_DEV_AUTH?: string;
-  };
-};
-
 const isDevelopment = process.env.NEXT_PUBLIC_ENABLE_DEV_AUTH === 'true';
 
 // Client component that uses searchParams
@@ -47,7 +40,13 @@ function SignInContent() {
 
   const handleSignIn = async () => {
     setIsLoading(true);
-    await signIn("github", { callbackUrl });
+    try {
+      await signIn("github", { callbackUrl });
+    } catch (err) {
+      console.error('Sign-in error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
@@ -67,7 +66,7 @@ function SignInContent() {
                 {error === "EmailCreateAccount" && "There was a problem creating your account. Please try again."}
                 {error === "Callback" && "There was a problem with the callback. Please try again."}
                 {error === "OAuthAccountNotLinked" && "This account is already linked to another sign-in method."}
-                {error === "default" && "An unknown error occurred. Please try again."}
+                {error === "Default" && "An unknown error occurred. Please try again."}
               </div>
             )}
 

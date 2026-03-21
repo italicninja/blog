@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, FormEvent, ChangeEvent, useCallback } from 'react';
+import { useState, FormEvent, ChangeEvent, useCallback } from 'react';
 import { TagSelector } from '@/components/TagSelector';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -14,7 +14,7 @@ import {
   replaceImageUrls,
   useUploadThing
 } from '@/lib/image-utils';
-import { imageUrlToMetadata } from '@/lib/uploadthing-utils';
+import { imageUrlToMetadata, getImageUrl } from '@/lib/uploadthing-utils';
 import type { Post } from '@/lib/posts';
 
 interface FormData {
@@ -30,7 +30,7 @@ interface BlogEditFormProps {
 }
 
 export default function BlogEditForm({ post }: BlogEditFormProps) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +46,7 @@ export default function BlogEditForm({ post }: BlogEditFormProps) {
     coverImage: post.coverImage || '',
     tags: post.tags || [],
   });
-  const formRef = useRef<HTMLFormElement>(null);
+
 
   // Handle form input changes
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -106,32 +106,35 @@ export default function BlogEditForm({ post }: BlogEditFormProps) {
     setImageProcessingStatus(`Processing ${localImageRefs.length} images...`);
 
     try {
-      // Convert paths to File objects with error handling for each image
-      const imageFilesPromises = localImageRefs.map(async (img) => {
-        try {
-          return await pathToFile(img.path);
-        } catch (error) {
-          console.error(`Error converting image path to file: ${img.path}`, error);
-          return null;
-        }
-      });
+      // Convert paths to File objects, keeping track of which refs succeeded
+      const imageConversionResults = await Promise.all(
+        localImageRefs.map(async (img) => {
+          try {
+            const file = await pathToFile(img.path);
+            return { img, file };
+          } catch (error) {
+            console.error(`Error converting image path to file: ${img.path}`, error);
+            return { img, file: null };
+          }
+        })
+      );
 
-      const imageFiles: (File | null)[] = await Promise.all(imageFilesPromises);
+      // Only upload refs that successfully converted — keep img+file paired to preserve alignment
+      const validPairs = imageConversionResults.filter(
+        (pair): pair is { img: typeof pair.img; file: File } => pair.file !== null
+      );
 
-      // Filter out null values (failed conversions)
-      const validImageFiles = imageFiles.filter((file): file is File => file !== null);
-
-      if (validImageFiles.length === 0) {
+      if (validPairs.length === 0) {
         setImageProcessingStatus("No valid images to upload");
         return { processedContent: content };
       }
 
-      setImageProcessingStatus(`Uploading ${validImageFiles.length} images...`);
+      setImageProcessingStatus(`Uploading ${validPairs.length} images...`);
 
       // Upload images to UploadThing with error handling
       let uploadResults;
       try {
-        uploadResults = await startUpload(validImageFiles);
+        uploadResults = await startUpload(validPairs.map(p => p.file));
 
         if (!uploadResults || uploadResults.length === 0) {
           console.warn("Upload completed but no results returned");
@@ -144,22 +147,19 @@ export default function BlogEditForm({ post }: BlogEditFormProps) {
       }
 
       // Create a map of original paths to metadata JSON strings
+      // validPairs[i] corresponds directly to uploadResults[i] — alignment is guaranteed
       const replacements = new Map<string, string>();
 
-      localImageRefs.forEach((img, index) => {
+      validPairs.forEach(({ img }, index) => {
         if (index < uploadResults.length) {
           try {
             const url = uploadResults[index].url;
-
-            // Create metadata for the image
             const metadata = imageUrlToMetadata(url, img.alt);
             if (metadata) {
-              // Store the metadata JSON string directly in the content
               replacements.set(img.path, metadata);
             }
           } catch (error) {
             console.error(`Error processing uploaded image at index ${index}:`, error);
-            // Skip this image if there's an error
           }
         }
       });
@@ -330,7 +330,7 @@ export default function BlogEditForm({ post }: BlogEditFormProps) {
         </div>
       )}
 
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -372,7 +372,7 @@ export default function BlogEditForm({ post }: BlogEditFormProps) {
             <div className="relative mb-4">
               <div className="relative w-full h-48 rounded-md overflow-hidden">
                 <Image
-                  src={formData.coverImage.startsWith('{') ? JSON.parse(formData.coverImage).url : formData.coverImage}
+                  src={getImageUrl(formData.coverImage)}
                   alt="Cover image preview"
                   fill
                   className="object-cover"

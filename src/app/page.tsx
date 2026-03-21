@@ -12,9 +12,11 @@ import { AnimatedContainer, AnimatedHeading, HoverLink } from "@/components/Anim
 export const revalidate = 60;
 
 export default async function Home() {
-  const recentPosts = await getRecentPosts(6);
-  const topProjects = await getTopGitHubProjects('italicninja', 4);
-  const coverImages = await getCoverImages();
+  const [recentPosts, topProjects, coverImages] = await Promise.all([
+    getRecentPosts(6),
+    getTopGitHubProjects(process.env.OWNER_GITHUB_LOGIN || 'italicninja', 4),
+    getCoverImages(),
+  ]);
 
   return (
     <>

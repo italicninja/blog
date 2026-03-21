@@ -212,8 +212,8 @@ export default function AuthorizedPostersPage() {
                       <button
                         onClick={() => handleRemovePoster(poster.githubLogin)}
                         className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                        disabled={poster.githubLogin === session?.user?.name}
-                        title={poster.githubLogin === session?.user?.name ? "You cannot remove yourself" : "Remove"}
+                        disabled={poster.githubLogin === session?.user?.githubLogin}
+                        title={poster.githubLogin === session?.user?.githubLogin ? "You cannot remove yourself" : "Remove"}
                       >
                         Remove
                       </button>
