@@ -31,7 +31,9 @@ function createPrismaClient(): PrismaClient {
   // Only import pg and adapter on the server side
   if (typeof window === 'undefined') {
     // Dynamic imports to avoid bundling for client
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PrismaPg } = require('@prisma/adapter-pg');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { Pool } = require('pg');
 
     // Reuse the pool in development to avoid connection exhaustion during hot-reload.
