@@ -24,7 +24,7 @@ function FallbackImage({ title }: { title: string }) {
 }
 
 // Safe image component with error handling
-function SafeImage({ src, alt, ...props }: { src: string; alt: string; [key: string]: any }) {
+function SafeImage({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) {
   if (!src) {
     return <FallbackImage title={alt} />;
   }
