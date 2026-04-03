@@ -22,7 +22,7 @@
     "@uiw/react-md-editor": "^4.1.0",
     "@uploadthing/react": "^7.3.2",
     "@vercel/analytics": "^2.0.1",
-    "dotenv": "^17.3.1",
+    "dotenv": "^17.4.0",
     "framer-motion": "^12.38.0",
     "gray-matter": "^4.0.3",
     "next": "^15.5.14",
@@ -36,7 +36,7 @@
     "rehype-stringify": "^10.0.1",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
-    "slugify": "^1.6.8",
+    "slugify": "^1.6.9",
     "unified": "^11.0.5",
     "uploadthing": "^7.7.3",
     "zod": "^3.25.76"
