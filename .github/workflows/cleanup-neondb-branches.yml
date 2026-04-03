@@ -65,7 +65,7 @@ jobs:
           BRANCH_ID=$(neonctl branches list \
             --project-id "$NEON_PROJECT_ID" \
             --api-key "$NEON_API_KEY" \
-            -o json | jq -r ".[] | select(.name == \"$NEON_BRANCH_NAME\") | .id")
+            -o json | jq -r ".branches[] | select(.name == \"$NEON_BRANCH_NAME\") | .id")
 
           # Exit gracefully if branch doesn't exist (may have been manually deleted)
           if [[ -z "$BRANCH_ID" ]]; then
@@ -163,7 +163,7 @@ jobs:
                            date -u -v +3d "+%Y-%m-%dT%H:%M:%SZ")
 
               # Set the NeonDB branch to expire; set -e will propagate failures
-              neonctl branches update "$BRANCH_ID" \
+              neonctl branches set-expiration "$BRANCH_ID" \
                 --project-id "$NEON_PROJECT_ID" \
                 --api-key "$NEON_API_KEY" \
                 --expires-at "$EXPIRY_DATE"
@@ -171,7 +171,7 @@ jobs:
             else
               echo "✓ Git branch '$GIT_BRANCH_NAME' still active (NeonDB branch: '$BRANCH_NAME' - no action needed)"
             fi
-          done < <(echo "$NEON_BRANCHES" | jq -c '.[]')
+          done < <(echo "$NEON_BRANCHES" | jq -c '.branches[]')
 
           echo "============================================"
           echo "Scheduled cleanup complete!"
