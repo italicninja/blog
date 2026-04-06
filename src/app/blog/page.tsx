@@ -47,7 +47,7 @@ export default async function BlogPage({
   const { orderBy, orderDirection } = sortOptions[sort] || sortOptions.newest;
 
   // Fetch posts and tags in parallel
-  const [{ posts, total, totalPages }, tags] = await Promise.all([
+  const [{ posts, totalPages }, tags] = await Promise.all([
     getAllPosts({
       page: currentPage,
       limit: 10,

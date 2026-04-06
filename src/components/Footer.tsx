@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { getLatestCommit } from '@/lib/github';
 import { formatDate } from '@/utils/date';
 

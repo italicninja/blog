@@ -2,7 +2,7 @@ import GithubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getBaseUrl } from "@/lib/auth-utils";
 import { JWT } from "next-auth/jwt";
-import { Session, AuthOptions, Account, Profile, User } from "next-auth";
+import { AuthOptions, Account, Profile, User } from "next-auth";
 
 // Extend the Session type to include githubLogin
 declare module "next-auth" {
@@ -103,7 +103,7 @@ export const authOptions: AuthOptions = {
       }
       return token;
     },
-    async redirect({ url, baseUrl }) {
+    async redirect({ url, baseUrl: _baseUrl }) {
       // Always use the dynamically determined base URL
       const dynamicBaseUrl = getBaseUrl();
 

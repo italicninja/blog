@@ -324,7 +324,7 @@ export async function DELETE(request: NextRequest) {
             { status: 403 }
           );
         }
-      } catch (error) {
+      } catch {
         return NextResponse.json(
           { error: 'Error checking delete permission' },
           { status: 500 }

@@ -7,8 +7,7 @@ import { getPostBySlug, getRecentPosts, getAllPostSlugs, getPostsByTag } from "@
 import { formatDate } from "@/utils/date";
 import type { Metadata } from "next";
 import PostContent from "./post-content";
-import { Suspense } from "react";
-import { getImageUrl, isValidImageData, DEFAULT_FALLBACK_IMAGE } from "@/lib/uploadthing-utils";
+import { getImageUrl, DEFAULT_FALLBACK_IMAGE } from "@/lib/uploadthing-utils";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 import { getGithubLogin, isOwner } from '@/lib/auth-utils';
@@ -29,10 +28,10 @@ function SafeImage({ src, alt, ...props }: { src: string; alt: string; [key: str
     return <FallbackImage title={alt} />;
   }
 
-  try {
-    // Process different types of image sources
-    let processedSrc;
+  let processedSrc: string = DEFAULT_FALLBACK_IMAGE;
+  let hasError = false;
 
+  try {
     if (src.startsWith('{')) {
       try {
         // JSON metadata
@@ -52,12 +51,16 @@ function SafeImage({ src, alt, ...props }: { src: string; alt: string; [key: str
       // Other URLs - use as is
       processedSrc = src;
     }
-
-    return <Image src={processedSrc} alt={alt} {...props} />;
   } catch (error) {
     console.error("Error rendering image:", error, "Source:", src);
+    hasError = true;
+  }
+
+  if (hasError) {
     return <FallbackImage title={alt} />;
   }
+
+  return <Image src={processedSrc} alt={alt} {...props} />;
 }
 
 // Define the params type

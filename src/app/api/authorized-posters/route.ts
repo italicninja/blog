@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import {
-  isAuthorizedPoster,
   addAuthorizedPoster,
   removeAuthorizedPoster,
   getAllAuthorizedPosters,
@@ -26,7 +25,7 @@ async function isAdmin(githubLogin: string): Promise<boolean> {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get the current session
     const session = await getServerSession(authOptions);
